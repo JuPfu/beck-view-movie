@@ -30,9 +30,9 @@ class GenerateVideo:
 
         self.fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         self.video = cv2.VideoWriter('/Users/jp/PycharmProjects/bv-movie/output_async_video.mp4', self.fourcc, 18,
-                                     (1280, 720))
-        #                             (1920, 1080))
-        #                             (3840, 2160))
+                                     #                             (1280, 720))
+                                     #                             (1920, 1080))
+                                     (3840, 2160))
         #                        (3840, 2160))  # (1920, 1080))
 
         self.sr = cv2.dnn_superres.DnnSuperResImpl_create()
@@ -68,6 +68,7 @@ class GenerateVideo:
 
         self.readImgSubject = rx.subject.Subject()
         self.readImgObservable = self.readImgSubject.pipe(
+            ops.subscribe_on(self.thread_pool_scheduler),
             ops.map(lambda img: cv2.imread(img)),
             ops.map(lambda img: cv2.resize(img, (1920, 1080), interpolation=cv2.INTER_CUBIC)),
             ops.do_action(lambda img: self.upscaleSubject.on_next(img)),
@@ -110,7 +111,7 @@ class GenerateVideo:
             on_completed=lambda: print("from list completed")
         )
 
-        # self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=True)
+        self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=True)
 
     def terminate(self):
         self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
