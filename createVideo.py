@@ -2,7 +2,6 @@
 import multiprocessing
 import os
 import time
-from threading import current_thread
 from typing import AnyStr
 
 import cv2
@@ -43,14 +42,16 @@ class GenerateVideo:
 
         self.path = "ESPCN_x2.pb"
         self.sr.readModel(self.path)
-        self.sr.setModel("espcn", 2)  # set the model by passing the value and the upsampling ratio
+        self.sr.setModel("espcn", 2)  # set the model by passing the value and the up-sampling ratio
 
         self.writeFrameSubject = rx.subject.Subject()
         self.writeFrameDisposable = self.writeFrameSubject.pipe(
             ops.observe_on(self.thread_pool_scheduler),
-            ops.map(lambda x: self.video.write(x)),
+            ops.do_action(lambda x: self.video.write(x)),
+            ops.scan(lambda acc, x: acc + 1, 0),
+            ops.do_action(lambda x: print(f"wrote image {x}"))
         ).subscribe(
-            on_next=lambda i: print(f"PROCESS writeFrame: {os.getpid()} {current_thread().name}"),
+            # on_next=lambda i: print(f"PROCESS writeFrame: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
             on_completed=lambda: print("XXXXXXXXXXXXXX")
         )
@@ -61,7 +62,7 @@ class GenerateVideo:
             ops.observe_on(self.thread_pool_scheduler),
             ops.do_action(lambda img: self.writeFrameSubject.on_next(img)),
         ).subscribe(
-            on_next=lambda i: print(f"PROCESS upscale: {os.getpid()} {current_thread().name}"),
+            # on_next=lambda i: print(f"PROCESS upscale: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
             on_completed=lambda: print("ZZZZZZZZZ")
         )
@@ -69,12 +70,15 @@ class GenerateVideo:
         self.readImgSubject = rx.subject.Subject()
         self.readImgObservable = self.readImgSubject.pipe(
             ops.subscribe_on(self.thread_pool_scheduler),
+            ops.do_action(lambda x: print(f"working on image {x}")),
             ops.map(lambda img: cv2.imread(img)),
             ops.map(lambda img: cv2.resize(img, (1920, 1080), interpolation=cv2.INTER_CUBIC)),
             ops.do_action(lambda img: self.upscaleSubject.on_next(img)),
-            ops.observe_on(self.thread_pool_scheduler)
+            ops.observe_on(self.thread_pool_scheduler),
+            ops.scan(lambda acc, x: acc + 1, 0),
+            ops.do_action(lambda x: print(f"read image {x}"))
         ).subscribe(
-            on_next=lambda i: print(f"PROCESS readIMG: {os.getpid()} {current_thread().name}"),
+            # on_next=lambda i: print(f"PROCESS readIMG: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
             on_completed=lambda: print("finished readIMG")
         )
@@ -103,17 +107,20 @@ class GenerateVideo:
 
         rx.from_list(image_list).pipe(
             ops.do_action(lambda x: self.readImgSubject.on_next(x)),
-            ops.observe_on(self.thread_pool_scheduler)
+            ops.observe_on(self.thread_pool_scheduler),
         ).subscribe(
-            on_next=lambda i: print(
-                f"VIEW PROCESS async_write_video: {os.getpid()} {current_thread().name}"),
+            # on_next=lambda i: print(
+            #    f"VIEW PROCESS async_write_video: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
             on_completed=lambda: print("from list completed")
         )
 
+        print("-------LIST END---------")
+        time.sleep(2.0)
         self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
 
     def terminate(self):
+        print("-------TERMINATE---------")
         self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
         self.video.release()
 
