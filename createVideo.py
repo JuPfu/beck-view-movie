@@ -111,13 +111,11 @@ class GenerateVideo:
             on_completed=lambda: print("from list completed")
         )
 
-        self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=True)
+        self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
 
     def terminate(self):
         self.thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
         self.video.release()
-        end_time = time.time()
-        elapsed_time = end_time - self.start_time
 
         print("-------ENDE---------")
-        print(elapsed_time)
+        print((time.time() - self.start_time))
