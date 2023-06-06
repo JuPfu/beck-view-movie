@@ -2,7 +2,7 @@ import atexit
 
 from createVideo import GenerateVideo
 
-dir_path = r'/Users/jp/PycharmProjects/ic/*.jpg'
+dir_path: str = r'/Users/jp/PycharmProjects/ic/*.jpg'
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
