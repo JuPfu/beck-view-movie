@@ -1,5 +1,3 @@
-import atexit
-
 from createVideo import GenerateVideo
 
 dir_path: str = r'/Users/jp/PycharmProjects/ic/*.jpg'
@@ -10,4 +8,3 @@ if __name__ == '__main__':
     gv.async_write_video(dir_path)
     # gv.write_video(dir_path)
 
-atexit.register(gv.terminate)
