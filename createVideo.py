@@ -115,16 +115,16 @@ class GenerateVideo:
             on_completed=lambda: print("from list completed")
         )
 
-        time.sleep(2.0)
         self.__thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
 
     def __del__(self) -> None:
         self.__thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
+
         self.__video.release()
 
-        self.__readImgObservable.dispose()
-        self.__upscaleDisposable.dispose()
-        self.__writeFrameDisposable.dispose()
+        # self.__readImgObservable.dispose()
+        # self.__upscaleDisposable.dispose()
+        # self.__writeFrameDisposable.dispose()
 
         print("-------ENDE---------")
         print((time.time() - self.__start_time))
