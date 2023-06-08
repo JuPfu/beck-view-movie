@@ -115,7 +115,7 @@ class GenerateVideo:
             on_completed=lambda: print("from list completed")
         )
 
-        self.__thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
+        time.sleep(2)
 
     def __del__(self) -> None:
         self.__thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
