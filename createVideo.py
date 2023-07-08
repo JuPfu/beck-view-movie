@@ -29,7 +29,7 @@ class GenerateVideo:
 
         self.__fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         self.__video = cv2.VideoWriter('/Users/jp/PycharmProjects/bv-movie/output_async_video.mp4', self.__fourcc, 18,
-                                       #                             (1280, 720))
+                                       #                                                          (1280, 720))
                                        #                             (1920, 1080))
                                        (3840, 2160))
         #                        (3840, 2160))  # (1920, 1080))
@@ -72,6 +72,7 @@ class GenerateVideo:
             ops.subscribe_on(self.__thread_pool_scheduler),
             ops.do_action(lambda x: print(f"working on image {x}")),
             ops.map(lambda img: cv2.imread(img)),
+            ops.map(lambda img: cv2.flip(img, 1)),
             ops.map(lambda img: cv2.resize(img, (1920, 1080), interpolation=cv2.INTER_CUBIC)),
             ops.do_action(lambda img: self.__upscaleSubject.on_next(img)),
             ops.observe_on(self.__thread_pool_scheduler),
