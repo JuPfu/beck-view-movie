@@ -1,7 +1,5 @@
-# importing libraries
 import logging
 import multiprocessing
-import os
 import time
 from typing import AnyStr
 
@@ -18,7 +16,7 @@ from getSortedFilenames import get_sorted_image_files
 class GenerateVideo:
     logger = None
 
-    processed_frames = 0
+    processed_frames_count = 0
 
     __writeFrameSubject: Subject = None
     __writeFrameDisposable: DisposableBase = None
@@ -32,19 +30,16 @@ class GenerateVideo:
 
         self.__start_time = 0.0
 
-        # Checking the current directory path
-        print(f"cwd={os.getcwd()}")
-
         # calculate cpu count which will be used to create a ThreadPoolScheduler
         self.__thread_count = multiprocessing.cpu_count()
         self.__thread_pool_scheduler = ThreadPoolScheduler(self.__thread_count)
-        print("Cpu count is : {0}".format(self.__thread_count))
+        self.logger.info("Cpu count is : {0}".format(self.__thread_count))
 
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
         self.__video = cv2.VideoWriter('/Users/jp/PycharmProjects/beck-view-movie/output_async_video.mp4',
                                        fourcc, 24,
-        #                               (1280, 720))
-         (1920, 1080))
+                                       (1280, 720))
+        #                              (1920, 1080))
         #                               (3840, 2160))
         #                        (3840, 2160))  # (1920, 1080))
 
@@ -67,14 +62,12 @@ class GenerateVideo:
     def initialize_threads(self) -> None:
         self.__writeFrameSubject: rx.subject.Subject = rx.subject.Subject()
         self.__writeFrameDisposable = self.__writeFrameSubject.pipe(
-            # ops.observe_on(self.__thread_pool_scheduler),
             ops.map(lambda x: self.__video.write(x)),
             ops.scan(lambda acc, x: acc + 1, 0),
-            ops.do_action(self.set_processed_frames)
+            ops.do_action(self.set_processed_frames_count)
         ).subscribe(
-            # on_next=lambda i: print(f"PROCESS writeFrame: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
-            on_completed=lambda: print("XXXXXXXXXXXXXX")
+            on_completed=lambda: print("write frame finished")
         )
 
         self.__upscaleSubject: rx.subject.Subject = rx.subject.Subject()
@@ -83,48 +76,38 @@ class GenerateVideo:
             ops.observe_on(self.__thread_pool_scheduler),
             ops.map(lambda img: self.__writeFrameSubject.on_next(img)),
         ).subscribe(
-            # on_next=lambda i: print(f"PROCESS upscale: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
             on_completed=lambda: self.__writeFrameSubject.on_completed()
         )
 
         self.__readImgSubject: rx.subject.Subject = rx.subject.Subject()
         self.__readImgDisposable = self.__readImgSubject.pipe(
-            # ops.subscribe_on(self.__thread_pool_scheduler),
-            ops.do_action(lambda x: print(f"working on image {x}")),
             ops.map(lambda img: cv2.imread(img)),
             ops.map(lambda img: cv2.flip(img, 0)),
             # ops.map(lambda img: cv2.resize(img, (1920, 1080), interpolation=cv2.INTER_CUBIC)),
             ops.map(lambda img: self.__upscaleSubject.on_next(img)),
-            # ops.observe_on(self.__thread_pool_scheduler),
+            ops.observe_on(self.__thread_pool_scheduler),
             ops.scan(lambda acc, x: acc + 1, 0),
-            # ops.do_action(lambda x: print(f"read image {x}"))
         ).subscribe(
-            # on_next=lambda i: print(f"PROCESS readIMG: {os.getpid()} {current_thread().name}"),
             on_error=lambda e: print(e),
             on_completed=lambda: self.__upscaleSubject.on_completed()
         )
 
-    def set_processed_frames(self, count) -> None:
-        self.processed_frames = count
+    def set_processed_frames_count(self, count) -> None:
+        self.processed_frames_count = count
 
-    def write_video(self, dir_path: str) -> None:
+    def make_video(self, dir_path: str) -> None:
         self.__start_time = time.time()
         image_list: list[AnyStr] = get_sorted_image_files(dir_path)
 
-        print(f"write_video jetzt gehts los {len(image_list)}")
+        self.logger.info(f"Make mp4 movie from {len(image_list)} frames")
 
         rx.from_list(image_list).pipe(
             ops.map(lambda x: self.__readImgSubject.on_next(x)),
             ops.observe_on(self.__thread_pool_scheduler),
         ).subscribe(
-            # on_next=lambda i: print(
-            #    f"VIEW PROCESS write_video: {os.getpid()} {current_thread().name}"),
-            on_error=lambda e: print(e),
-            on_completed=print("finished from list")
+            on_error=lambda e: print(e)
         )
-
-        # time.sleep(2)
 
     def __del__(self) -> None:
         self.__thread_pool_scheduler.executor.shutdown(wait=True, cancel_futures=False)
@@ -132,10 +115,10 @@ class GenerateVideo:
         self.__video.release()
 
         elapsed_time = time.time() - self.__start_time
-        average_fps = self.processed_frames / elapsed_time if elapsed_time > 0 else 0
+        average_fps = self.processed_frames_count / elapsed_time if elapsed_time > 0 else 0
 
-        self.logger.info("-------End Of Film---------")
-        self.logger.info("Total processed frames: %d", self.processed_frames)
+        self.logger.info("-------MP4 film assembled---------")
+        self.logger.info("Total processed frames: %d", self.processed_frames_count)
         self.logger.info("Total elapsed time: %.2f seconds", elapsed_time)
         self.logger.info("Average FPS: %.2f", average_fps)
 
