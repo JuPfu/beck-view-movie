@@ -7,8 +7,6 @@ def get_sorted_image_files(path: str = "./frames*.png") -> List[str]:
     # Use pathlib.Path to resolve the path
     path: Path = Path(path)
 
-    print(f"get_sorted_image_files {path=}")
-
     # Use glob to get a list of matching files
     file_list = path.parent.glob(path.name)
 
