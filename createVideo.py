@@ -7,27 +7,13 @@ from typing import AnyStr
 import cv2
 import reactivex as rx
 from cv2 import dnn_superres
-from reactivex import operators as ops, Subject
-from reactivex.abc import DisposableBase
+from reactivex import operators as ops
 from reactivex.scheduler import ThreadPoolScheduler
 
 from getSortedFilenames import get_sorted_image_files
 
 
 class GenerateVideo:
-    # __logger = None
-
-    # __video = None
-
-    __processed_frames_count = 0
-
-    # __writeFrameSubject: Subject = None
-    # __writeFrameDisposable: DisposableBase = None
-    # __upscaleSubject: Subject = None
-    # __upscaleDisposable: DisposableBase = None
-    # __readImgSubject: Subject = None
-    # __readImgDisposable: DisposableBase = None
-
 
     def __init__(self, path: Path, opath: Path, name: str, fps: int, scale_up: bool) -> None:
 
@@ -36,6 +22,8 @@ class GenerateVideo:
         self.__name: str = name
         self.__fps: int = fps
         self.__scale_up: bool = scale_up
+
+        self.__processed_frames_count = 0
 
         self.__initialize_logging()
 
@@ -59,23 +47,23 @@ class GenerateVideo:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
 
         resolution = (3840, 2160) if self.__scale_up else (1920, 1080)
-        print(f"init {self.__opath=}")
-        print(f"init {self.__name=}")
-        np: Path = self.__opath / self.__name
-        print(f"initialize {str(np)=}")
-        self.__video = cv2.VideoWriter(str(self.__opath / self.__name),
-                                       # '/Users/jp/PycharmProjects/beck-view-movie/output_async_video.mp4',
-                                       fourcc, self.__fps, resolution)
 
-        self.__sr = dnn_superres.DnnSuperResImpl.create()
-        # self.path = "ESPCN_x3.pb"
-        # self.sr.readModel(self.path)
-        # self.sr.setModel("espcn", 3)
-        # result = sr.upsample(img)
+        self.__video = cv2.VideoWriter(str(self.__opath / self.__name), fourcc, self.__fps, resolution)
 
-        self.__path = "ESPCN_x2.pb"
-        self.__sr.readModel(self.__path)
-        self.__sr.setModel("espcn", 2)  # set the model by passing the value and the up-sampling ratio
+        if self.__scale_up:
+            self.__sr = dnn_superres.DnnSuperResImpl.create()
+            # self.path = "ESPCN_x3.pb"
+            # self.sr.readModel(self.path)
+            # self.sr.setModel("espcn", 3)
+            # result = sr.upsample(img)
+
+            self.__path = "ESPCN_x2.pb"
+            self.__sr.readModel(self.__path)
+            self.__sr.setModel("espcn", 2)  # set the model by passing the value and the up-sampling ratio
+
+            self.__scaling_function = self.__sr.upsample
+        else:
+            self.__scaling_function = self.no_scaling
 
     def __initialize_threads(self) -> None:
         self.__writeFrameSubject: rx.subject.Subject = rx.subject.Subject()
@@ -90,7 +78,7 @@ class GenerateVideo:
 
         self.__upscaleSubject: rx.subject.Subject = rx.subject.Subject()
         self.__upscaleDisposable = self.__upscaleSubject.pipe(
-            # ops.map(lambda x: self.__sr.upsample(x)),
+            ops.map(lambda x: self.__scaling_function(x)),
             ops.observe_on(self.__thread_pool_scheduler),
             ops.map(lambda img: self.__writeFrameSubject.on_next(img)),
         ).subscribe(
@@ -100,7 +88,7 @@ class GenerateVideo:
 
         self.__readImgSubject: rx.subject.Subject = rx.subject.Subject()
         self.__readImgDisposable = self.__readImgSubject.pipe(
-            ops.map(lambda img: cv2.imread(img)),
+            ops.map(lambda filename: cv2.imread(filename)),
             ops.map(lambda img: cv2.flip(img, 0)),
             # ops.map(lambda img: cv2.resize(img, (1920, 1080), interpolation=cv2.INTER_CUBIC)),
             ops.map(lambda img: self.__upscaleSubject.on_next(img)),
@@ -110,6 +98,9 @@ class GenerateVideo:
             on_error=lambda e: self.__logger.error(e),
             on_completed=lambda: self.__upscaleSubject.on_completed()
         )
+
+    def no_scaling(self, x: cv2.typing.MatLike) -> cv2.typing.MatLike:
+        return x
 
     def set_processed_frames_count(self, count) -> None:
         self.__processed_frames_count = count

@@ -48,7 +48,7 @@ class CommandLineParser:
             dest="scaling",
             action='store_true',
             default=False,
-            help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no upscaling'
+            help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no up-scaling'
         )
 
     def parse_args(self) -> argparse.Namespace:
