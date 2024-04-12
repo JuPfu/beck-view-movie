@@ -22,25 +22,27 @@ class GenerateVideo:
         self.__name: str = name
         self.__fps: int = fps
         self.__scale_up: bool = scale_up
-
         self.__processed_frames_count = 0
+        self.__start_time = 0.0
 
         self.__initialize_logging()
+        self.__initialize_thread_pool_scheduler()
 
-        # calculate cpu count which will be used to create a ThreadPoolScheduler
-        self.__thread_count = multiprocessing.cpu_count()
-        self.__thread_pool_scheduler = ThreadPoolScheduler(self.__thread_count)
-        self.__logger.info("Cpu count is : {0}".format(self.__thread_count))
 
         self.__initialize_up_scaling()
 
         self.__initialize_threads()
 
-        self.__start_time = 0.0
 
     def __initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.__logger = logging.getLogger(__name__)
+
+    def __initialize_thread_pool_scheduler(self) -> None:
+        # calculate cpu count which will be used to create a ThreadPoolScheduler
+        self.__thread_count = multiprocessing.cpu_count()
+        self.__thread_pool_scheduler = ThreadPoolScheduler(self.__thread_count)
+        self.__logger.info("CPU count is: %d", self.__thread_count)
 
     def __initialize_up_scaling(self) -> None:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
@@ -72,7 +74,7 @@ class GenerateVideo:
             ops.do_action(self.set_processed_frames_count)
         ).subscribe(
             on_error=lambda e: self.__logger.error(e),
-            on_completed=lambda: print("write frame finished")
+            on_completed=lambda: print("Write frame finished")
         )
 
         self.__upscaleSubject: rx.subject.Subject = rx.subject.Subject()
@@ -89,7 +91,6 @@ class GenerateVideo:
         self.__readImgDisposable = self.__readImgSubject.pipe(
             ops.map(lambda filename: cv2.imread(filename)),
             ops.map(lambda img: cv2.flip(img, 0)),
-            # ops.map(lambda img: cv2.resize(img, (1920, 1080), interpolation=cv2.INTER_CUBIC)),
             ops.map(lambda img: self.__upscaleSubject.on_next(img)),
             ops.observe_on(self.__thread_pool_scheduler),
             ops.scan(lambda acc, x: acc + 1, 0),
