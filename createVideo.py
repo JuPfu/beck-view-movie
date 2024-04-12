@@ -27,7 +27,6 @@ class GenerateVideo:
 
         self.__initialize_logging()
 
-        print(f"__init__ {opath=}")
         # calculate cpu count which will be used to create a ThreadPoolScheduler
         self.__thread_count = multiprocessing.cpu_count()
         self.__thread_pool_scheduler = ThreadPoolScheduler(self.__thread_count)
