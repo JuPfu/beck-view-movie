@@ -1,11 +1,14 @@
+from CommandLineParser import CommandLineParser
 from createVideo import GenerateVideo
 
-# dir_path: str = r'/Users/jp/PycharmProjects/beck-view-digitalize/film/frame*.png'
-dir_path: str = r'/Users/jp/PycharmProjects/beck-view-digitalize/frame*.png'
-# dir_path: str = r'/Users/jp/Downloads/Gerald/*.jpg'
+def main():
+    args = CommandLineParser().parse_args()
+
+    generate_video = GenerateVideo(args.path, args.opath, args.name, args.fps, args.scaling)
+
+    generate_video.make_video(str(args.path / "frame*.png"))
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    generate_video = GenerateVideo()
-    generate_video.make_video(dir_path)
-    # gv.write_video(dir_path)
+    main()
