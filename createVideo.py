@@ -44,7 +44,7 @@ class GenerateVideo:
     def _no_scaling(self, x):
         return x
 
-    def process_image(self, img_path: str) -> cv2.Mat:
+    def process_image(self, img_path: str):
         img = cv2.imread(img_path)
         img = cv2.flip(img, 0)
         img = self.scaling_function(img)
