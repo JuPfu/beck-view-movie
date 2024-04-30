@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import AnyStr
+from typing import List
 
 import cv2
 from cv2 import dnn_superres
@@ -12,56 +12,96 @@ from getSortedFilenames import get_sorted_image_files
 class GenerateVideo:
 
     def __init__(self, path: Path, opath: Path, name: str, fps: int, scale_up: bool) -> None:
+        """
+        Initialize the GenerateVideo class.
 
-        self.__path: Path = path
-        self.__opath: Path = opath
-        self.__name: str = name
-        self.__fps: int = fps
-        self.__scale_up: bool = scale_up
+        Args:
+            path (Path): The input path containing images.
+            opath (Path): The output path for saving the video.
+            name (str): The name of the output video file.
+            fps (int): Frames per second of the output video.
+            scale_up (bool): Whether to use upscaling.
+        """
+        self.path: Path = path
+        self.opath: Path = opath
+        self.name: str = name
+        self.fps: int = fps
+        self.scale_up: bool = scale_up
 
-        self.__initialize_logging()
-        self.__initialize_up_scaling()
+        self._initialize_logging()
+        self._initialize_video_writer()
+        self._initialize_up_scaling()
 
-    def __initialize_logging(self) -> None:
+    def _initialize_logging(self) -> None:
+        """
+        Initialize logging configuration.
+        """
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        self.__logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)
 
-    def __initialize_up_scaling(self) -> None:
+    def _initialize_video_writer(self) -> None:
+        """
+        Initialize video writer with the appropriate codec and resolution.
+        """
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
+        resolution = (3840, 2160) if self.scale_up else (1920, 1080)
 
-        resolution = (3840, 2160) if self.__scale_up else (1920, 1080)
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, resolution)
 
-        self.__video = cv2.VideoWriter(str(self.__opath / self.__name), fourcc, self.__fps, resolution)
-
-        if self.__scale_up:
-            self.__sr = dnn_superres.DnnSuperResImpl.create()
-            # self.path = "ESPCN_x3.pb"
-            # self.sr.readModel(self.path)
-            # self.sr.setModel("espcn", 3)
-            # result = sr.upsample(img)
-
-            self.__path = "ESPCN_x2.pb"
-            self.__sr.readModel(self.__path)
-            self.__sr.setModel("espcn", 2)  # set the model by passing the value and the up-sampling ratio
-
-            self.__scaling_function = self.__sr.upsample
+    def _initialize_up_scaling(self) -> None:
+        """
+        Initialize the upscaling model if scale_up is True.
+        """
+        if self.scale_up:
+            self.sr = dnn_superres.DnnSuperResImpl.create()
+            self.sr.readModel("ESPCN_x2.pb")  # Load the upscaling model
+            self.sr.setModel("espcn", 2)  # Set the model and upscaling ratio
+            self.scaling_function = self.sr.upsample
         else:
-            self.__scaling_function = self.no_scaling
+            self.scaling_function = self._no_scaling
 
-    def no_scaling(self, x):
+    def _no_scaling(self, x):
+        """
+        Return the input image without scaling.
+
+        Args:
+            x: The input image.
+
+        Returns:
+            The input image.
+        """
         return x
 
     def make_video(self, path: str) -> None:
-        image_list: list[AnyStr] = get_sorted_image_files(path)
+        """
+        Create a video from images in the specified path.
+        """
+        image_list: List[str] = get_sorted_image_files(path)
 
-        self.__logger.info(f"Make mp4 movie {str(self.__opath / self.__name)} from {len(image_list)} frames")
+        self.logger.info(f"Creating video {str(self.opath / self.name)} from {len(image_list)} frames")
 
-        for img in tqdm(image_list, unit="frames", desc="Generation progress"):
-            img_read = cv2.imread(img)
-            flipped_img = cv2.flip(img_read, 0)
-            upscaled_img = self.__scaling_function(flipped_img)
-            self.__video.write(upscaled_img)
+        # Process each image and write to video
+        for img_path in tqdm(image_list, unit="frames", desc="Generation progress"):
+            # Read image
+            img = cv2.imread(img_path)
+
+            # Optional: Flip the image vertically
+            img = cv2.flip(img, 0)
+
+            # Upscale the image if scaling is enabled
+            img = self.scaling_function(img)
+
+            # Write the processed image to the video
+            self.video_writer.write(img)
+
+        # Release video writer and log completion
+        self.video_writer.release()
+        self.logger.info(f"Video {str(self.opath / self.name)} assembled successfully.")
 
     def __del__(self) -> None:
-        self.__video.release()
-        self.__logger.info(f"MP4 movie {(str(self.__opath / self.__name))} assembled")
+        """
+        Destructor to release resources.
+        """
+        if hasattr(self, "video_writer"):
+            self.video_writer.release()
+        self.logger.info(f"Released video writer for {str(self.opath / self.name)}.")
