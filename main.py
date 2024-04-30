@@ -3,6 +3,7 @@ from argparse import Namespace
 from CommandLineParser import CommandLineParser
 from createVideo import GenerateVideo
 
+
 def main():
     args: Namespace = CommandLineParser().parse_args()
 

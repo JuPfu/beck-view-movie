@@ -1,7 +1,8 @@
-mypy>=1.9.0
+mypy>=1.10.0
 mypy-extensions>=1.0.0
 numpy==1.26.4
 opencv-python>=4.9.0.80
 opencv-contrib-python>=4.9.0.80
 reactivex==4.0.4
 typing_extensions>=4.11.0
+tqdm>=4.66.2
