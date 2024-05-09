@@ -10,7 +10,7 @@ class CommandLineParser:
         )
         # Add argument for version
         self.parser.add_argument('--version', action='version', version='1.0.0')
-        # Add arguments for input path, output path, movie name, frames per second, and scaling
+        # Add arguments for input path, output path, movie name and frames per second
         self.parser.add_argument(
             '-p',
             dest="path",
@@ -42,13 +42,6 @@ class CommandLineParser:
             choices=range(15, 31),
             default=24,
             help='Frames per second, usually 18, 21, or 24 - default is 24 fps.'
-        )
-        self.parser.add_argument(
-            '-su',
-            dest="scaling",
-            action='store_true',
-            default=False,
-            help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no up-scaling'
         )
 
     def parse_args(self) -> argparse.Namespace:
