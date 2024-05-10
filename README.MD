@@ -51,22 +51,22 @@ pip install -r requirements.txt
 
 To use the beck-view-movie program, you must run the script from the command line and provide the necessary arguments. The program accepts the following command-line arguments:
 
-- -p: Specifies the path to the directory containing PNG frames matching the pattern frame{number}.png. The default is the current directory.
+- -p <br>Specifies the path to the directory containing PNG frames matching the pattern frame{number}.png. The default is the current directory.
 ```shell
 -p /path/to/input/directory
 ```
 
-- -o: Specifies the output directory where the generated MP4 movie will be saved. The default is the current directory.
+- -o <br>Specifies the output directory where the generated MP4 movie will be saved. The default is the current directory.
 ```shell
 -o /path/to/output/directory
 ```
 
-- -n: Specifies the name of the output MP4 movie file. The default is "beck-view-movie.mp4".
+- -n <br>Specifies the name of the output MP4 movie file. The default is "beck-view-movie.mp4".
 ```shell
 -n output_video.mp4
 ```
 
-- -fps: Specifies the frames per second (FPS) for the video. The default is 24 FPS, and acceptable values range from 15 to 30.
+- -fps <br>Specifies the frames per second (FPS) for the video. The default is 24 FPS, and acceptable values range from 15 to 30.
 ```shell
 -fps 24
 ```
