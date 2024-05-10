@@ -12,7 +12,7 @@ def main():
 
     generate_video = GenerateVideo(args.path, args.opath, args.name, args.fps)
 
-    generate_video.make_video(str(args.path / "frame*.png"))
+    generate_video.assemble_video(str(args.path / "frame*.png"))
 
 
 # Press the green button in the gutter to run the script.

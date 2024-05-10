@@ -16,9 +16,9 @@ class GenerateVideo:
 
         Args:
             path (Path): The input path containing images.
-            opath (Path): The output path for saving the video.
-            name (str): The name of the output video file.
-            fps (int): Frames per second of the output video.
+            opath (Path): The path to the directory for saving the video.
+            name (str): Basename of the output video file.
+            fps (int): Frames per second used when assembling the video.
             batch_size (int): Number of images to process per batch.
         """
         self.path = path
@@ -68,18 +68,17 @@ class GenerateVideo:
 
             # Collect the results in the same order as the input list
             processed_images = []
-            for future in as_completed(futures):
-                processed_images.append(future.result())
+            [processed_images.append(future.result()) for future in as_completed(futures)]
 
         return processed_images
 
-    def make_video(self, path: str) -> None:
+    def assemble_video(self, path: str) -> None:
         """
         Create a video from images in the specified path using parallel processing in chunks.
         """
         image_list: List[str] = get_sorted_image_files(path)
 
-        self.logger.info(f"Creating video {str(self.opath / self.name)} from {len(image_list)} frames")
+        self.logger.info(f"Creating video from {len(image_list)} 'frames*.png' files in  directory {str(path)}.")
 
         # Process images in chunks
         for start in tqdm(range(0, len(image_list), self.batch_size),
