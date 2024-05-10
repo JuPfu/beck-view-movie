@@ -21,7 +21,7 @@
 - Assembles digitized frames into a video file.
 - Supports parallel processing for efficient handling of large image sets.
 - Customizable frame rate (FPS) and output video file name.
-- Supports batch processing to enhance performance.
+- Supports batch (chunk) processing to enhance performance.
 - Logging for detailed information and progress tracking.
 
 ## Requirements
@@ -92,7 +92,7 @@ This will display a usage guide with information on the available arguments and 
 
 ## License
 
-`beck-view-movie` is licensed under the [GPL-3.0](https://github.com/JuPfu/beck-view-movie?tab=GPL-3.0-1-ov-file#readme) license. Please review the license file for more information.
+[beck-view-movie](https://github.com/JuPfu/beck-view-movie) is licensed under the [GPL-3.0](https://github.com/JuPfu/beck-view-movie?tab=GPL-3.0-1-ov-file#readme) license. Please review the license file for more information.
 
 ## Information
 This `README.md` file provides information on the project, its features, requirements, installation, usage, and examples. It is a comprehensive guide for anyone who wants to understand and use the [beck-view-movie](https://github.com/JuPfu/beck-view-movie) project. Let me know if you need any further assistance or adjustments!
