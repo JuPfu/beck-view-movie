@@ -1,1 +1,0 @@
-python3 -m nuitka --onefile --macos-create-app-bundle --product-name="beck-view-movie" --macos-app-icon=your-icon.png -o "beck-view-movie" main.py
