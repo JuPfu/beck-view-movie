@@ -10,7 +10,7 @@ def main():
 
     args: Namespace = CommandLineParser().parse_args()
 
-    generate_video = GenerateVideo(args.path, args.opath, args.name, args.fps)
+    generate_video = GenerateVideo(args.path, args.opath, args.name, args.fps, args.batch_size)
 
     generate_video.assemble_video(str(args.path / "frame*.png"))
 

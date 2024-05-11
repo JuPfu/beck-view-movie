@@ -25,7 +25,7 @@ class GenerateVideo:
         self.opath = opath
         self.name = name
         self.fps = fps
-        self.batch_size = batch_size
+        self.batch_size = min(max(1,batch_size),500)
 
         self._initialize_logging()
         self._initialize_video_writer()
