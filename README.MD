@@ -71,7 +71,7 @@ To use the beck-view-movie program, you must run the script from the command lin
 -fps 24
 ```
 
-## Example Usage
+## Examples
 
 Here's an example of how to run the program from the command line:
 
