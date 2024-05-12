@@ -41,7 +41,7 @@ class CommandLineParser:
             nargs='?',
             choices=range(15, 31),
             default=24,
-            help='Frames per second, usually 18, 21, or 24 - default is 24 fps.'
+            help='Frames per second, usually 18, 21, or 24 - default is 24 fps'
         )
         self.parser.add_argument(
             '-bs',
@@ -49,7 +49,7 @@ class CommandLineParser:
             type=int,
             nargs='?',
             default=100,
-            help='Batch size - default is 100.'
+            help='Batch size - default is 100 - affects speed of assembly'
         )
 
     def parse_args(self) -> argparse.Namespace:
