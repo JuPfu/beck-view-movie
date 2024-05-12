@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 import cv2
+from numpy import ndarray
 from tqdm import tqdm
 
 from getSortedFilenames import get_sorted_image_files
@@ -38,7 +39,7 @@ class GenerateVideo:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
 
-    def process_image(self, img_path: str):
+    def process_image(self, img_path: str) -> ndarray:
         """
         Process a single image: read, flip and return the processed image.
 
@@ -51,7 +52,7 @@ class GenerateVideo:
         img = cv2.imread(img_path)
         return cv2.flip(img, 0)
 
-    def process_batch(self, image_paths: List[str]):
+    def process_batch(self, image_paths: List[str]) -> [ndarray]:
         """
         Process a batch of images in parallel and return the processed images.
 
@@ -59,7 +60,7 @@ class GenerateVideo:
             image_paths (List[str]): List of image file paths.
 
         Returns:
-            List[cv2.Mat]: List of processed images in the same order as the input list.
+            List[ndarray]: List of processed images in the same order as the input list.
         """
         # Use ThreadPoolExecutor for parallel processing
         with ThreadPoolExecutor() as executor:
@@ -83,7 +84,6 @@ class GenerateVideo:
         # Process images in chunks
         for start in tqdm(range(0, len(image_list), self.batch_size),
                           unit_scale=self.batch_size,
-                          unit_divisor=1000,
                           desc="Generation progress",
                           unit="frames"):
             end = start + self.batch_size
@@ -95,8 +95,7 @@ class GenerateVideo:
             # Write processed images to the video writer
             [self.video_writer.write(img) for img in processed_images]
 
-        # Release video writer and log completion
-        self.video_writer.release()
+        # Log completion
         self.logger.info(f"Video {str(self.opath / self.name)} assembled successfully.")
 
     def __del__(self) -> None:
