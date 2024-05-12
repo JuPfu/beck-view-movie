@@ -68,7 +68,12 @@ To use the beck-view-movie program, you must run the script from the command lin
 
 - -fps <br>Specifies the frames per second (FPS) for the video. The default is 24 FPS, and acceptable values range from 15 to 30.
 ```shell
--fps 24
+-fps 21
+```
+
+- -bs <br>Specifies the batch size which is worked on in parallel. The default is 100 frames (images).
+```shell
+-bs 25
 ```
 
 ## Examples
