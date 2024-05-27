@@ -37,7 +37,7 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1280, 720)) # (1920, 1080))
 
     def process_image(self, img_path: str) -> ndarray:
         """
@@ -79,7 +79,7 @@ class GenerateVideo:
         """
         image_list: List[str] = get_sorted_image_files(path)
 
-        self.logger.info(f"Creating video from {len(image_list)} 'frames*.png' files in  directory {str(path)}.")
+        self.logger.info(f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name)}.")
 
         # Process images in chunks
         for start in tqdm(range(0, len(image_list), self.batch_size),
