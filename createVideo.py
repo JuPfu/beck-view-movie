@@ -1,5 +1,5 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List
 
@@ -37,7 +37,7 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1280, 720)) # (1920, 1080))
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
 
     def process_image(self, img_path: str) -> ndarray:
         """
@@ -52,7 +52,7 @@ class GenerateVideo:
         img = cv2.imread(img_path)
         return cv2.flip(img, 0)
 
-    def process_batch(self, image_paths: List[str]) -> [ndarray]:
+    def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         """
         Process a batch of images in parallel and return the processed images.
 
@@ -64,12 +64,8 @@ class GenerateVideo:
         """
         # Use ThreadPoolExecutor for parallel processing
         with ThreadPoolExecutor() as executor:
-            # Submit tasks for each image in the batch
-            futures = [executor.submit(self.process_image, img_path) for img_path in image_paths]
-
-            # Collect the results in the same order as the input list
-            processed_images = []
-            [processed_images.append(future.result()) for future in as_completed(futures)]
+            # Use map to process images in parallel and maintain order
+            processed_images = list(executor.map(self.process_image, image_paths))
 
         return processed_images
 
