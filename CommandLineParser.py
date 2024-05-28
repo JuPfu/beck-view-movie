@@ -44,12 +44,20 @@ class CommandLineParser:
             help='Frames per second, usually 18, 21, or 24 - default is 24 fps'
         )
         self.parser.add_argument(
+            '-w',
+            dest="num_workers",
+            type=int,
+            nargs='?',
+            default=8,
+            help='Number of parallel worker threads - default is 8 - affects speed of assembly'
+        )
+        self.parser.add_argument(
             '-bs',
             dest="batch_size",
             type=int,
             nargs='?',
             default=100,
-            help='Batch size - default is 100 - affects speed of assembly'
+            help='Batch size for each worker thread - default is 100 - affects speed of assembly'
         )
 
     def parse_args(self) -> argparse.Namespace:

@@ -11,7 +11,7 @@ from getSortedFilenames import get_sorted_image_files
 
 
 class GenerateVideo:
-    def __init__(self, path: Path, opath: Path, name: str, fps: int, batch_size: int = 100) -> None:
+    def __init__(self, path: Path, opath: Path, name: str, fps: int, batch_size: int = 100, num_workers: int = 16) -> None:
         """
         Initialize the GenerateVideo class.
 
@@ -21,12 +21,14 @@ class GenerateVideo:
             name (str): Basename of the output video file.
             fps (int): Frames per second used when assembling the video.
             batch_size (int): Number of images to process per batch.
+            num_workers (int): Number of worker threads to use for parallel processing.
         """
         self.path = path
         self.opath = opath
         self.name = name
         self.fps = fps
         self.batch_size = min(max(1, batch_size), 500)
+        self.num_workers = num_workers
 
         self._initialize_logging()
         self._initialize_video_writer()
@@ -49,7 +51,7 @@ class GenerateVideo:
         Returns:
             The processed image.
         """
-        img = cv2.imread(img_path)
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Use cv2.IMREAD_COLOR for faster reading
         return cv2.flip(img, 0)
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
@@ -62,8 +64,7 @@ class GenerateVideo:
         Returns:
             List[ndarray]: List of processed images in the same order as the input list.
         """
-        # Use ThreadPoolExecutor for parallel processing
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             # Use map to process images in parallel and maintain order
             processed_images = list(executor.map(self.process_image, image_paths))
 
@@ -89,7 +90,8 @@ class GenerateVideo:
             processed_images = self.process_batch(batch)
 
             # Write processed images to the video writer
-            [self.video_writer.write(img) for img in processed_images]
+            for img in processed_images:
+                self.video_writer.write(img)
 
         # Log completion
         self.logger.info(f"Video {str(self.opath / self.name)} assembled successfully.")
