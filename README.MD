@@ -71,7 +71,12 @@ To use the beck-view-movie program, you must run the script from the command lin
 -fps 21
 ```
 
-- -bs <br>Specifies the batch size which is worked on in parallel. The default is 100 frames (images).
+- -w <br>Number of parallel worker threads. The default value is 8. The value should be adapted to your  hardware. Affects speed of assembly.
+```shell
+-w 8
+```
+
+- -bs <br>Specifies the batch size which is worked on in parallel in each worker thread. The default is 100 frames (images).
 ```shell
 -bs 25
 ```
