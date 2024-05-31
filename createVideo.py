@@ -1,6 +1,6 @@
 import logging
+from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import List
 
 import cv2
@@ -11,27 +11,44 @@ from getSortedFilenames import get_sorted_image_files
 
 
 class GenerateVideo:
-    def __init__(self, path: Path, opath: Path, name: str, fps: int, batch_size: int = 100, num_workers: int = 16) -> None:
+    def __init__(self, args: Namespace) -> None:
         """
         Initialize the GenerateVideo class.
+        """
 
-        Args:
+        self._initialize_args(args)
+        self._initialize_logging()
+        self._initialize_video_writer()
+
+    def _initialize_args(self, args: Namespace) -> None:
+        """
+        args:
             path (Path): The input path containing images.
             opath (Path): The path to the directory for saving the video.
             name (str): Basename of the output video file.
             fps (int): Frames per second used when assembling the video.
             batch_size (int): Number of images to process per batch.
             num_workers (int): Number of worker threads to use for parallel processing.
+            flip_horizontal (bool): Flip frames horizontally
+            flip_vertical (bool): Flip frames vertically
         """
-        self.path = path
-        self.opath = opath
-        self.name = name
-        self.fps = fps
-        self.batch_size = min(max(1, batch_size), 500)
-        self.num_workers = num_workers
+        self.path = args.path
+        self.opath = args.opath
+        self.name = args.name
+        self.fps = args.fps
+        self.batch_size = min(max(1, args.batch_size), 500)
+        self.num_workers = args.num_workers
 
-        self._initialize_logging()
-        self._initialize_video_writer()
+        self.flip = 2  # no flip
+
+        if args.flip_horizontal:
+            self.flip = 0
+
+        if args.flip_vertical:
+            self.flip = 1
+
+        if args.flip_horizontal and args.flip_vertical:  # flip in both directions
+            self.flip = -1
 
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -39,7 +56,7 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1280, 720))  # (1920, 1080))
 
     def process_image(self, img_path: str) -> ndarray:
         """
@@ -51,8 +68,8 @@ class GenerateVideo:
         Returns:
             The processed image.
         """
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Use cv2.IMREAD_COLOR for faster reading
-        return cv2.flip(img, 0)
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
+        return cv2.flip(img, self.flip) if self.flip != 2 else img
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         """

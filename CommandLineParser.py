@@ -43,6 +43,22 @@ class CommandLineParser:
             default=24,
             help='Frames per second, usually 18, 21, or 24 - default is 24 fps'
         )
+        # Add arguments for horizontal flip
+        self.parser.add_argument(
+            '-h', '--flip_horizontal',
+            dest="flip_horizontal",
+            action="store_true",
+            default=False,
+            help='Flip frame horizontally'
+        )
+        # Add arguments for vertical flip
+        self.parser.add_argument(
+            '-v', '--flip_vertical',
+            dest="flip_vertical",
+            action="store_true",
+            default=False,
+            help='Flip frame vertically'
+        )
         self.parser.add_argument(
             '-w',
             dest="num_workers",
