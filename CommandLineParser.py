@@ -45,7 +45,7 @@ class CommandLineParser:
         )
         # Add arguments for horizontal flip
         self.parser.add_argument(
-            '-h', '--flip_horizontal',
+            '-fh', '--flip_horizontal',
             dest="flip_horizontal",
             action="store_true",
             default=False,
@@ -53,7 +53,7 @@ class CommandLineParser:
         )
         # Add arguments for vertical flip
         self.parser.add_argument(
-            '-v', '--flip_vertical',
+            '-fv', '--flip_vertical',
             dest="flip_vertical",
             action="store_true",
             default=False,
