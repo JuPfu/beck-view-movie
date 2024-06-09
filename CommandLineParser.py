@@ -12,7 +12,7 @@ class CommandLineParser:
         self.parser.add_argument('--version', action='version', version='1.0.0')
         # Add arguments for input path, output path, movie name and frames per second
         self.parser.add_argument(
-            '-p',
+            '-p', '--path',
             dest="path",
             type=pathlib.Path,
             nargs='?',
@@ -20,7 +20,7 @@ class CommandLineParser:
             help='Path to directory containing png frames - default is current directory.'
         )
         self.parser.add_argument(
-            '-o',
+            '-o', '--output-path',
             dest="opath",
             type=pathlib.Path,
             nargs='?',
@@ -28,14 +28,14 @@ class CommandLineParser:
             help='Output directory for generated mp4 movie - default is current directory'
         )
         self.parser.add_argument(
-            '-n',
+            '-n', '--name',
             dest="name",
             nargs='?',
             default="beck-view-movie.mp4",
             help='Name of mp4 movie - default is "beck-view-movie.mp4"'
         )
         self.parser.add_argument(
-            '-fps',
+            '-fps', '--frames-per-second',
             dest="fps",
             type=int,
             nargs='?',
@@ -60,7 +60,7 @@ class CommandLineParser:
             help='Flip frame vertically'
         )
         self.parser.add_argument(
-            '-w',
+            '-w',  '--number-of-workers',
             dest="num_workers",
             type=int,
             nargs='?',
@@ -68,7 +68,7 @@ class CommandLineParser:
             help='Number of parallel worker threads - default is 8 - affects speed of assembly'
         )
         self.parser.add_argument(
-            '-bs',
+            '-bs', '--batch-size',
             dest="batch_size",
             type=int,
             nargs='?',
