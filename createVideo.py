@@ -56,7 +56,7 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1280, 720))  # (1920, 1080))
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
 
     def process_image(self, img_path: str) -> ndarray:
         """
