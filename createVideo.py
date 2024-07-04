@@ -55,6 +55,14 @@ class GenerateVideo:
         self.logger = logging.getLogger(__name__)
 
     def _initialize_video_writer(self) -> None:
+        # windows specific note
+        # output format changes with filename extension
+        # successfully tested postfixes without checking of actual coding in generated files
+        # avi
+        # mp4
+        # mp4v
+        # m4v
+        # wmv
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
 
