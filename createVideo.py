@@ -1,4 +1,5 @@
 import logging
+import os
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
@@ -23,21 +24,27 @@ class GenerateVideo:
     def _initialize_args(self, args: Namespace) -> None:
         """
         args:
-            path (Path): The input path containing images.
-            opath (Path): The path to the directory for saving the video.
-            name (str): Basename of the output video file.
-            fps (int): Frames per second used when assembling the video.
-            batch_size (int): Number of images to process per batch.
-            num_workers (int): Number of worker threads to use for parallel processing.
+            path (Path): The input path containing images
+            opath (Path): The path to the directory for saving the video
+            name (str): Basename of the output video file
+            fps (int): Frames per second used when assembling the video
+            batch_size (int): Number of images to process per batch
+            num_workers (int): Number of worker threads to use for parallel processing
             flip_horizontal (bool): Flip frames horizontally
             flip_vertical (bool): Flip frames vertically
+            width_height: (int, int): width and height of frames
         """
         self.path = args.path
         self.opath = args.opath
-        self.name = args.name
+        self.name = os.path.splitext(args.name)[0]
+        self.output_format = args.output_format
         self.fps = args.fps
         self.batch_size = min(max(1, args.batch_size), 500)
         self.num_workers = args.num_workers
+        self.width, self.height = args.width_height
+        if self.width < 100 or self.height < 100:
+            self.width = 1920
+            self.height = 1080
 
         self.flip = 2  # no flip
 
@@ -64,7 +71,8 @@ class GenerateVideo:
         #   m4v
         #   wmv
         fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name), fourcc, self.fps, (1920, 1080))
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format, fourcc, self.fps,
+                                            (self.width, self.height))
 
     def process_image(self, img_path: str) -> ndarray:
         """
@@ -101,7 +109,8 @@ class GenerateVideo:
         """
         image_list: List[str] = get_sorted_image_files(path)
 
-        self.logger.info(f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name)}.")
+        self.logger.info(
+            f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + "." + self.output_format}.")
 
         # Process images in chunks
         for start in tqdm(range(0, len(image_list), self.batch_size),
@@ -119,7 +128,7 @@ class GenerateVideo:
                 self.video_writer.write(img)
 
         # Log completion
-        self.logger.info(f"Video {str(self.opath / self.name)} assembled successfully.")
+        self.logger.info(f"Video {str(self.opath / self.name) + "." + self.output_format} assembled successfully.")
 
     def __del__(self) -> None:
         """
