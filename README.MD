@@ -61,9 +61,17 @@ To use the beck-view-movie program, you must run the script from the command lin
 -o /path/to/output/directory
 ```
 
-- -n <br>Specifies the name of the output MP4 movie file. The default is "beck-view-movie.mp4".
+- -n <br>Specifies the name of the output MP4 movie file without postfix. The default is "beck-view-movie".
 ```shell
--n output_video.mp4
+-n output_video
+```
+
+- -of <br>Specifies the output format generated and the postfix assigned to the movie file generated. The default is "mp4". 
+Allowed formats are `avi`, `mp4`, `mp4v`, `m4v` and  `wmf`. The default is  `mp4`.<br/>
+Example: When `-n output_video` and `-of wmf` had  been specified,  a  movie file with the basename `output_video.wmf` will
+be generated. This generated file will be in `wmf` format.
+```shell
+-of wmf
 ```
 
 - -fps <br>Specifies the frames per second (FPS) for the video. The default is 24 FPS, and acceptable values range from 15 to 30.
@@ -90,6 +98,12 @@ To use the beck-view-movie program, you must run the script from the command lin
 ```shell
 -bs 25
 ```
+
+- -wh <br>Specifies the width and height of the frames (images) in the directory designated with the `-p`option. The default is a width of 1920 and a height of 1080  pixels.
+```shell
+-wh 1920 1080
+```
+
 
 ## Examples
 
