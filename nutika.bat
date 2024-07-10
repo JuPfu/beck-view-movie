@@ -1,1 +1,1 @@
-python -m nuitka --windows-icon-from-ico=beck-view-movie.png -o "beck-view-movie" main.py
+python -m nuitka --standalone --onefile --windows-icon-from-ico=beck-view-movie.png -o "beck-view-movie" main.py
