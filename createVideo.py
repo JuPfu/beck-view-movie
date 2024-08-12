@@ -38,15 +38,15 @@ class GenerateVideo:
         self.opath = args.opath
         self.name = os.path.splitext(args.name)[0]
         self.output_format = args.output_format
-        self.fps = args.fps
-        self.batch_size = min(max(1, args.batch_size), 500)
-        self.num_workers = args.num_workers
+        self.fps: int = args.fps
+        self.batch_size: int = min(max(1, args.batch_size), 500)
+        self.num_workers: int = args.num_workers
         self.width, self.height = args.width_height
         if self.width < 100 or self.height < 100:
             self.width = 1920
             self.height = 1080
 
-        self.flip = 2  # no flip
+        self.flip: int = 2  # no flip
 
         if args.flip_horizontal:
             self.flip = 0
@@ -62,6 +62,7 @@ class GenerateVideo:
         self.logger = logging.getLogger(__name__)
 
     def _initialize_video_writer(self) -> None:
+        self.logger.info(f"Build details: {cv2.getBuildInformation()}")
         # windows specific notes
         #   output format changes with filename extension
         #   successfully tested postfixes without checking of actual coding in generated files
@@ -70,7 +71,7 @@ class GenerateVideo:
         #   mp4v
         #   m4v
         #   wmv
-        fourcc = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
+        fourcc: int = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format, fourcc, self.fps,
                                             (self.width, self.height))
 
@@ -84,7 +85,7 @@ class GenerateVideo:
         Returns:
             The processed image.
         """
-        img = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
+        img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
         return cv2.flip(img, self.flip) if self.flip != 2 else img
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
@@ -117,7 +118,7 @@ class GenerateVideo:
                           unit_scale=self.batch_size,
                           desc="Generation progress",
                           unit="frames"):
-            end = start + self.batch_size
+            end: int = start + self.batch_size
             batch = image_list[start:end]
 
             # Process the batch of images and collect the processed images

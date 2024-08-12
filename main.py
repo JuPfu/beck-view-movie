@@ -14,13 +14,13 @@ def main():
 
     args: Namespace = CommandLineParser().parse_args()
 
-    generate_video = GenerateVideo(args)
+    generate_video: GenerateVideo = GenerateVideo(args)
 
     generate_video.assemble_video(str(args.path / "frame*.png"))
 
 
-def sigint_handler(signum: int, frame: FrameType | None):
-    signame = signal.Signals(signum).name
+def sigint_handler(signum: int, frame: FrameType | None) -> None:
+    signame: str = signal.Signals(signum).name
     print(f"\nProgram terminated by signal '{signame}' at {frame}")
     exit(1)
 
