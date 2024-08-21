@@ -38,7 +38,7 @@ class GenerateVideo:
         self.opath = args.opath
         self.name = os.path.splitext(args.name)[0]
         self.output_format = args.output_format
-        self.fps: int = args.fps
+        self.fps: float = args.fps
         self.batch_size: int = min(max(1, args.batch_size), 500)
         self.num_workers: int = args.num_workers
         self.width, self.height = args.width_height
@@ -72,8 +72,10 @@ class GenerateVideo:
         #   m4v
         #   wmv
         fourcc: int = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format, fourcc, self.fps,
-                                            (self.width, self.height))
+        self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
+                                            fourcc=fourcc,
+                                            fps=self.fps,
+                                            frameSize=(self.width, self.height))
 
     def process_image(self, img_path: str) -> ndarray:
         """
