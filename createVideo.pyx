@@ -1,3 +1,13 @@
+# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+
+# cython: language_level=3
+# cython.infer_types(True)
+
+import cython
+
+import numpy as np              # Import numpy for Python-level use
+cimport numpy as np             # Import numpy for uint8 type
+
 import logging
 import os
 from argparse import Namespace
@@ -113,7 +123,7 @@ class GenerateVideo:
         image_list: List[str] = get_sorted_image_files(path)
 
         self.logger.info(
-            f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + "." + self.output_format}.")
+            f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + '.' + self.output_format}.")
 
         # Process images in chunks
         for start in tqdm(range(0, len(image_list), self.batch_size),
@@ -131,7 +141,7 @@ class GenerateVideo:
                 self.video_writer.write(img)
 
         # Log completion
-        self.logger.info(f"Video {str(self.opath / self.name) + "." + self.output_format} assembled successfully.")
+        self.logger.info(f"Video {str(self.opath / self.name) + '.' + self.output_format} assembled successfully.")
 
     def __del__(self) -> None:
         """
