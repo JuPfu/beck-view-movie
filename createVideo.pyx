@@ -1,77 +1,75 @@
 # distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 
 # cython: language_level=3
-# cython.infer_types(True)
-
+# cython: boundscheck=False, wraparound=False, initializedcheck=False, infer_types=True
 import cython
 
-import numpy as np              # Import numpy for Python-level use
-cimport numpy as np             # Import numpy for uint8 type
+import numpy as np
+cimport numpy as np
+from libc.stdint cimport uint8_t  # Use C types for better performance
 
 import logging
 import os
 from argparse import Namespace
-from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 import cv2
-from numpy import ndarray
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor  # Ensure this is imported
 
 from getSortedFilenames import get_sorted_image_files
 
+cdef class GenerateVideo:
+    cdef int width, height, flip, num_workers, batch_size
+    cdef float fps
+    cdef str name, output_format
+    cdef object video_writer, path, opath, logger
 
-class GenerateVideo:
     def __init__(self, args: Namespace) -> None:
         """
         Initialize the GenerateVideo class.
         """
-
         self._initialize_args(args)
         self._initialize_logging()
         self._initialize_video_writer()
 
-    def _initialize_args(self, args: Namespace) -> None:
+    cdef void _initialize_args(self, object args):
         """
-        args:
-            path (Path): The input path containing images
-            opath (Path): The path to the directory for saving the video
-            name (str): Basename of the output video file
-            fps (int): Frames per second used when assembling the video
-            batch_size (int): Number of images to process per batch
-            num_workers (int): Number of worker threads to use for parallel processing
-            flip_horizontal (bool): Flip frames horizontally
-            flip_vertical (bool): Flip frames vertically
-            width_height: (int, int): width and height of frames
+        Initialize the video generation arguments.
         """
         self.path = args.path
         self.opath = args.opath
         self.name = os.path.splitext(args.name)[0]
         self.output_format = args.output_format
-        self.fps: float = args.fps
-        self.batch_size: int = min(max(1, args.batch_size), 500)
-        self.num_workers: int = args.num_workers
+        self.fps = args.fps
+        self.batch_size = min(max(1, args.batch_size), 500)
+        self.num_workers = args.num_workers
         self.width, self.height = args.width_height
+
         if self.width < 100 or self.height < 100:
             self.width = 1920
             self.height = 1080
 
-        self.flip: int = 2  # no flip
-
-        if args.flip_horizontal:
+        # Determine the flip mode
+        self.flip = 2  # No flip by default
+        if args.flip_horizontal and args.flip_vertical:
+            self.flip = -1
+        elif args.flip_horizontal:
             self.flip = 0
-
-        if args.flip_vertical:
+        elif args.flip_vertical:
             self.flip = 1
 
-        if args.flip_horizontal and args.flip_vertical:  # flip in both directions
-            self.flip = -1
-
-    def _initialize_logging(self) -> None:
+    cdef void _initialize_logging(self):
+        """
+        Initialize logging configuration.
+        """
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
 
-    def _initialize_video_writer(self) -> None:
+    cdef void _initialize_video_writer(self):
+        """
+        Initialize the video writer.
+        """
         self.logger.info(f"Build details: {cv2.getBuildInformation()}")
         # windows specific notes
         #   output format changes with filename extension
@@ -87,60 +85,64 @@ class GenerateVideo:
                                             fps=self.fps,
                                             frameSize=(self.width, self.height))
 
-    def process_image(self, img_path: str) -> ndarray:
+    cpdef np.ndarray process_image(self, str img_path):
         """
-        Process a single image: read, flip and return the processed image.
+        Process a single image by reading and flipping.
 
         Args:
             img_path (str): Path to the image file.
 
         Returns:
-            The processed image.
+            np.ndarray: Processed image.
         """
-        img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
-        return cv2.flip(img, self.flip) if self.flip != 2 else img
+        cdef np.ndarray img
+        img = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Read image as uint8
+        if self.flip != 2:
+            img = cv2.flip(img, self.flip)
+        return img
 
-    def process_batch(self, image_paths: List[str]) -> List[ndarray]:
+    cpdef list process_batch(self, List[str] image_paths):
         """
-        Process a batch of images in parallel and return the processed images.
+        Process a batch of images in parallel.
 
         Args:
             image_paths (List[str]): List of image file paths.
 
         Returns:
-            List[ndarray]: List of processed images in the same order as the input list.
+            List of processed images.
         """
+        # Thread pool for parallel image processing
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             # Use map to process images in parallel and maintain order
             processed_images = list(executor.map(self.process_image, image_paths))
-
         return processed_images
 
-    def assemble_video(self, path: str) -> None:
+    cpdef void assemble_video(self, str path):
         """
-        Create a video from images in the specified path using parallel processing in chunks.
-        """
-        image_list: List[str] = get_sorted_image_files(path)
+        Assemble video from images using parallel processing.
 
-        self.logger.info(
-            f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + '.' + self.output_format}.")
+        Args:
+            path (str): Directory containing image files.
+        """
+        cdef List[str] image_list = get_sorted_image_files(path)
+        cdef int start, end, total_images
+        cdef int i
+
+        total_images = len(image_list)
+        self.logger.info(f"Creating video from {total_images} 'frames*.png' files in {str(self.opath / self.name) + '.' + self.output_format}.")
 
         # Process images in chunks
-        for start in tqdm(range(0, len(image_list), self.batch_size),
-                          unit_scale=self.batch_size,
-                          desc="Generation progress",
-                          unit="frames"):
-            end: int = start + self.batch_size
+        for start in tqdm(range(0, total_images, self.batch_size), unit_scale=self.batch_size, desc="Generation progress", unit="frames"):
+            end = min(start + self.batch_size, total_images)
             batch = image_list[start:end]
 
-            # Process the batch of images and collect the processed images
+            # Process and write images in batches
             processed_images = self.process_batch(batch)
 
-            # Write processed images to the video writer
+            # Use a regular loop for writing, as writing requires the GIL
             for img in processed_images:
                 self.video_writer.write(img)
 
-        # Log completion
         self.logger.info(f"Video {str(self.opath / self.name) + '.' + self.output_format} assembled successfully.")
 
     def __del__(self) -> None:
