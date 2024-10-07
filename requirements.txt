@@ -1,4 +1,5 @@
 numpy==1.26.4
 opencv-python>=4.10.0.84
 tqdm>=4.66.5
+setuptools>=75.1.0
 cython>=3.0.11

@@ -126,7 +126,6 @@ cdef class GenerateVideo:
         """
         cdef List[str] image_list = get_sorted_image_files(path)
         cdef int start, end, total_images
-        cdef int i
 
         total_images = len(image_list)
         self.logger.info(f"Creating video from {total_images} 'frames*.png' files in {str(self.opath / self.name) + '.' + self.output_format}.")
