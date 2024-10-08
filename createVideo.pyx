@@ -70,7 +70,7 @@ cdef class GenerateVideo:
         """
         Initialize the video writer.
         """
-        self.logger.info(f"Build details: {cv2.getBuildInformation()}")
+        # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
         # windows specific notes
         #   output format changes with filename extension
         #   successfully tested postfixes without checking of actual coding in generated files
