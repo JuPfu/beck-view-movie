@@ -129,6 +129,7 @@ class GenerateVideo:
             # Write processed images to the video writer
             for img in processed_images:
                 self.video_writer.write(img)
+                del img
 
         # Log completion
         self.logger.info(f"Video {str(self.opath / self.name) + "." + self.output_format} assembled successfully.")

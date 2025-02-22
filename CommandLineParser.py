@@ -20,7 +20,7 @@ class CommandLineParser:
             help='Path to directory containing png frames - default is current directory.'
         )
         self.parser.add_argument(
-            '-o', '--output-path',
+            '-o', '--output_path',
             dest="opath",
             type=pathlib.Path,
             nargs='?',
@@ -45,7 +45,7 @@ class CommandLineParser:
             help='Output format of generated video file - allowed values "avi", "mp4", "mp4v", "m4v", "wmv" - default is "mp4"'
         )
         self.parser.add_argument(
-            '-fps', '--frames-per-second',
+            '-fps', '--frames_per_second',
             dest="fps",
             type=int,
             nargs='?',
@@ -70,7 +70,7 @@ class CommandLineParser:
             help='Flip frame vertically'
         )
         self.parser.add_argument(
-            '-w', '--number-of-workers',
+            '-w', '--number_of_workers',
             dest="num_workers",
             type=int,
             nargs='?',
@@ -78,7 +78,7 @@ class CommandLineParser:
             help='Number of parallel worker threads - default is 8 - affects speed of assembly'
         )
         self.parser.add_argument(
-            '-bs', '--batch-size',
+            '-bs', '--batch_size',
             dest="batch_size",
             type=int,
             nargs='?',
@@ -86,7 +86,7 @@ class CommandLineParser:
             help='Batch size for each worker thread - default is 100 - affects speed of assembly'
         )
         self.parser.add_argument(
-            '-wh', '--width-height',
+            '-wh', '--width_height',
             dest="width_height",
             type=int,
             nargs=2,
