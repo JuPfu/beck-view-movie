@@ -20,7 +20,7 @@ class CommandLineParser:
             help='Path to directory containing png frames - default is current directory.'
         )
         self.parser.add_argument(
-            '-o', '--output-path',
+            '-o', '--output_path',
             dest="opath",
             type=pathlib.Path,
             nargs='?',

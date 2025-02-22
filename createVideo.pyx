@@ -141,6 +141,7 @@ cdef class GenerateVideo:
             # Use a regular loop for writing, as writing requires the GIL
             for img in processed_images:
                 self.video_writer.write(img)
+                del img
 
         self.logger.info(f"Video {str(self.opath / self.name) + '.' + self.output_format} assembled successfully.")
 
