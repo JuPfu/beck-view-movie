@@ -18,6 +18,6 @@ setup(
     license='MIT licence',
     author='juergen pfundt',
     author_email='juergen.pfundt@gmail.com',
-    description='cython test',
+    description='cython beck-view-movie',
     ext_modules = cb.cythonize(extensions)
 )
