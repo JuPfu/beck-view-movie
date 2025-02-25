@@ -50,6 +50,13 @@ Install the required dependencies:
 ```shell
 pip install -r requirements.txt
 ```
+Optional - build executable <em>beck-view-movie.exe</em>:
+   ```bash
+   pip3 install nuitka
+   pip3 install imageio
+
+   nuitka.bat
+   ```
 
 ## Usage
 
