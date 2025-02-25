@@ -16,13 +16,17 @@
 
 [beck-view-movie](https://github.com/JuPfu/beck-view-movie) is the second step in the process of digitizing Super V8 films. After the frames have been digitized and stored in an output directory by the [beck-view-digitalize](https://github.com/JuPfu/beck-view-digitalize) project, this program assembles the frames into a video file. The core method of this project utilizes parallel processing for efficient handling of a large number of images.
 
+![beck-view](./assets/img/beck-view-overview.png)
+
 ## Features
 
 - Assembles digitized frames into a video file.
+- Frames are sorted in the correct sequence to ensure proper chronological order in the video.
 - Supports parallel processing for efficient handling of large image sets.
 - Customizable frame rate (FPS) and output video file name.
-- Supports batch (chunk) processing to enhance performance.
+- Supports batch processing, this means images are worked on in chunks - default chunk size is 100 images, to enhance performance.
 - Logging for detailed information and progress tracking.
+- An executable image <em>"beck-view-movie.exe"</em> can be generated with the help of Nuitka.
 
 ## Requirements
 
@@ -110,7 +114,7 @@ be generated. This generated file will be in `wmf` format.
 Here's an example of how to run the program from the command line:
 
 ```shell
-python beck_view_movie.py -p /path/to/input/directory -o /path/to/output/directory -n my_movie -of wms -fps 24 -wh 1280  720
+python beck_view_movie.py -p /path/to/input/directory -o /path/to/output/directory -n my_movie -of wmf -fps 24 -wh 1280  720
 ```
 
 In this example, the program will generate a movie with the resolution of 1280 x 720 pixles in wmf format named my_movie.wmf at 24 frames per second from PNG frames in the specified input directory. The output video file will be saved to the specified output directory.
