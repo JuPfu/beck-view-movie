@@ -16,7 +16,7 @@
 
 [beck-view-movie](https://github.com/JuPfu/beck-view-movie) is the second step in the process of digitizing Super V8 films. After the frames have been digitized and stored in an output directory by the [beck-view-digitalize](https://github.com/JuPfu/beck-view-digitalize) project, this program assembles the frames into a video file. The core method of this project utilizes parallel processing for efficient handling of a large number of images.
 
-![beck-view](./assets/img/beck-view-overview.png)
+![beck-view](./assets/img/beck-view-overview.jpg)
 
 ## Features
 
