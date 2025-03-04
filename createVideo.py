@@ -66,7 +66,7 @@ class GenerateVideo:
         self.logger = logging.getLogger(__name__)
 
     def _initialize_video_writer(self) -> None:
-        self.logger.info(f"Build details: {cv2.getBuildInformation()}")
+        # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
 
         resolution = (3840, 2160) if self.scale_up else (self.width, self.height)
         # windows specific notes
