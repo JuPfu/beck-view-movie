@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 import cv2
+from cv2 import dnn_superres
 from numpy import ndarray
 from tqdm import tqdm
 
@@ -19,6 +20,7 @@ class GenerateVideo:
 
         self._initialize_args(args)
         self._initialize_logging()
+        self._initialize_up_scaling()
         self._initialize_video_writer()
 
     def _initialize_args(self, args: Namespace) -> None:
@@ -46,6 +48,8 @@ class GenerateVideo:
             self.width = 1920
             self.height = 1080
 
+        self.scale_up = args.scale_up
+
         self.flip: int = 2  # no flip
 
         if args.flip_horizontal:
@@ -63,6 +67,8 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         self.logger.info(f"Build details: {cv2.getBuildInformation()}")
+
+        resolution = (3840, 2160) if self.scale_up else (self.width, self.height)
         # windows specific notes
         #   output format changes with filename extension
         #   successfully tested postfixes without checking of actual coding in generated files
@@ -75,7 +81,19 @@ class GenerateVideo:
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
                                             fourcc=fourcc,
                                             fps=self.fps,
-                                            frameSize=(self.width, self.height))
+                                            frameSize=resolution)
+
+    def _initialize_up_scaling(self) -> None:
+        if self.scale_up:
+            self.sr = dnn_superres.DnnSuperResImpl.create()
+            self.sr.readModel("ESPCN_x2.pb")
+            self.sr.setModel("espcn", 2)
+            self.scaling_function = self.sr.upsample
+        else:
+            self.scaling_function = self._no_scaling
+
+    def _no_scaling(self, img):
+        return img
 
     def process_image(self, img_path: str) -> ndarray:
         """
@@ -88,7 +106,8 @@ class GenerateVideo:
             The processed image.
         """
         img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
-        return cv2.flip(img, self.flip) if self.flip != 2 else img
+        img = cv2.flip(img, self.flip) if self.flip != 2 else img
+        return self.scaling_function(img)
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         """

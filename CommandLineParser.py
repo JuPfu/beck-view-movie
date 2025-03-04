@@ -94,6 +94,13 @@ class CommandLineParser:
             default=[1920, 1080],
             help='Width and height of image frames - default is (1920, 1080)'
         )
+        self.parser.add_argument(
+            '-su', '--scale_up',
+            dest="scale_up",
+            action='store_true',
+            default=False,
+            help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no up-scaling'
+        )
 
     def parse_args(self) -> argparse.Namespace:
         # Parse arguments and return the namespace
