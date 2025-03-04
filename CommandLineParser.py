@@ -40,7 +40,7 @@ class CommandLineParser:
             dest="output_format",
             type=str,
             nargs='?',
-            choices=["avi", "mp4", "mp4v", "m4v", "wmv"],
+            choices=["avi", "mp4", "m4v", "wmv", "mov"],
             default="mp4",
             help='Output format of generated video file - allowed values "avi", "mp4", "mp4v", "m4v", "wmv" - default is "mp4"'
         )
@@ -100,6 +100,15 @@ class CommandLineParser:
             action='store_true',
             default=False,
             help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no up-scaling'
+        )
+        self.parser.add_argument(
+            '-c', '--codec',
+            dest="codec",
+            type=str,
+            choices=["avc1", "mp4v", "m4v", "h263", "raw"],
+            nargs='?',
+            default="avc1", # which is a H.264 encoder
+            help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
         )
 
     def parse_args(self) -> argparse.Namespace:

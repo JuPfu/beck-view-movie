@@ -35,7 +35,11 @@ class GenerateVideo:
             flip_horizontal (bool): Flip frames horizontally
             flip_vertical (bool): Flip frames vertically
             width_height: (int, int): width and height of frames
+            scale_up (bool): To up-scale or not to up-scale
+            codec (str): Codec to be used for video
         """
+
+        print(f"args={args}")
         self.path = args.path
         self.opath = args.opath
         self.name = os.path.splitext(args.name)[0]
@@ -49,6 +53,7 @@ class GenerateVideo:
             self.height = 1080
 
         self.scale_up = args.scale_up
+        self.codec = args.codec
 
         self.flip: int = 2  # no flip
 
@@ -69,15 +74,17 @@ class GenerateVideo:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
 
         resolution = (3840, 2160) if self.scale_up else (self.width, self.height)
+        # opencv codecs https://gist.github.com/takuma7/44f9ecb028ff00e2132e
+        #
         # windows specific notes
         #   output format changes with filename extension
         #   successfully tested postfixes without checking of actual coding in generated files
         #   avi
         #   mp4
-        #   mp4v
         #   m4v
         #   wmv
-        fourcc: int = cv2.VideoWriter.fourcc('m', 'p', '4', 'v')
+        print(f"vor fourcc self.codec={self.codec}")
+        fourcc = cv2.VideoWriter_fourcc(*self.codec)
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
                                             fourcc=fourcc,
                                             fps=self.fps,
@@ -107,7 +114,8 @@ class GenerateVideo:
         """
         img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
         img = cv2.flip(img, self.flip) if self.flip != 2 else img
-        return self.scaling_function(img)
+        img = self.scaling_function(img)
+        return img
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         """
