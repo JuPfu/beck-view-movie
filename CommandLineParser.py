@@ -105,7 +105,7 @@ class CommandLineParser:
             '-c', '--codec',
             dest="codec",
             type=str,
-            choices=["avc1", "mp4v", "m4v", "h263", "raw"],
+            choices=["avc1", "mp4", "mp4v", "m4v", "h263", "raw"],
             nargs='?',
             default="avc1", # which is a H.264 encoder
             help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'

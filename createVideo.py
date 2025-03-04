@@ -39,7 +39,6 @@ class GenerateVideo:
             codec (str): Codec to be used for video
         """
 
-        print(f"args={args}")
         self.path = args.path
         self.opath = args.opath
         self.name = os.path.splitext(args.name)[0]
@@ -83,7 +82,6 @@ class GenerateVideo:
         #   mp4
         #   m4v
         #   wmv
-        print(f"vor fourcc self.codec={self.codec}")
         fourcc = cv2.VideoWriter_fourcc(*self.codec)
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
                                             fourcc=fourcc,
