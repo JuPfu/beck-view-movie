@@ -6,6 +6,7 @@ from typing import List
 
 import cv2
 from cv2 import dnn_superres
+
 from numpy import ndarray
 from tqdm import tqdm
 
@@ -93,9 +94,9 @@ class GenerateVideo:
             self.sr = dnn_superres.DnnSuperResImpl.create()
             self.sr.readModel("ESPCN_x2.pb")
             self.sr.setModel("espcn", 2)
-            self.scaling_function = self.sr.upsample
+            self.upscaling_function = self.sr.upsample
         else:
-            self.scaling_function = self._no_scaling
+            self.upscaling_function = self._no_scaling
 
     def _no_scaling(self, img):
         return img
@@ -112,7 +113,7 @@ class GenerateVideo:
         """
         img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
         img = cv2.flip(img, self.flip) if self.flip != 2 else img
-        img = self.scaling_function(img)
+        img = self.upscaling_function(img)
         return img
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
