@@ -51,7 +51,7 @@ class CommandLineParser:
             nargs='?',
             choices=range(15, 31),
             default=24,
-            help='Frames per second, usually 18, 21, or 24 - default is 24s fps'
+            help='Frames per second, usually 18, 21, or 24 - default is 24 fps'
         )
         # Add arguments for horizontal flip
         self.parser.add_argument(
