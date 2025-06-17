@@ -1,6 +1,6 @@
-numpy==2.2.6
+numpy==2.3.0
 opencv-python>=4.11.0.86
 opencv-contrib-python>=4.11.0.86
 tqdm>=4.67.1
 
-nuitka>=2.7.4
+nuitka>=2.7.7
