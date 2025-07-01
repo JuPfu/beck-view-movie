@@ -7,7 +7,6 @@ from typing import List
 
 import cv2
 from cv2 import dnn_superres
-
 from numpy import ndarray
 from tqdm import tqdm
 
@@ -145,16 +144,11 @@ class GenerateVideo:
         self.logger.info(
             f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + "." + self.output_format}.")
 
-        # logging.basicConfig(level=logging.INFO)
-        # logger = logging.getLogger('tqdm_logger')
-        progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size, desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
+        progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size,
+                            desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
 
         # Process images in chunks
         for start in progress_bar:
-        # for start in tqdm(range(0, len(image_list), self.batch_size),
-        #                  unit_scale=self.batch_size,
-        #                  desc="Generation progress",
-        #                  unit="frames"):
             end: int = start + self.batch_size
             batch = image_list[start:end]
 
