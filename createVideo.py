@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
@@ -11,6 +12,7 @@ from numpy import ndarray
 from tqdm import tqdm
 
 from getSortedFilenames import get_sorted_image_files
+from tqdm_logger import TqdmLogger
 
 
 class GenerateVideo:
@@ -69,6 +71,8 @@ class GenerateVideo:
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
+        handler = logging.StreamHandler(sys.stdout)
+        self.logger.addHandler(handler)
 
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
@@ -141,11 +145,16 @@ class GenerateVideo:
         self.logger.info(
             f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + "." + self.output_format}.")
 
+        # logging.basicConfig(level=logging.INFO)
+        # logger = logging.getLogger('tqdm_logger')
+        progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size, desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
+
         # Process images in chunks
-        for start in tqdm(range(0, len(image_list), self.batch_size),
-                          unit_scale=self.batch_size,
-                          desc="Generation progress",
-                          unit="frames"):
+        for start in progress_bar:
+        # for start in tqdm(range(0, len(image_list), self.batch_size),
+        #                  unit_scale=self.batch_size,
+        #                  desc="Generation progress",
+        #                  unit="frames"):
             end: int = start + self.batch_size
             batch = image_list[start:end]
 
