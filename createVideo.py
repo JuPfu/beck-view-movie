@@ -36,7 +36,7 @@ class GenerateVideo:
             num_workers (int): Number of worker threads to use for parallel processing
             flip_horizontal (bool): Flip frames horizontally
             flip_vertical (bool): Flip frames vertically
-            width_height: (int, int): width and height of frames
+            width_height: (str): widthxheight of frames
             scale_up (bool): To up-scale or not to up-scale
             codec (str): Codec to be used for video
         """
@@ -48,7 +48,9 @@ class GenerateVideo:
         self.fps: float = args.fps
         self.batch_size: int = min(max(1, args.batch_size), 500)
         self.num_workers: int = args.num_workers
-        self.width, self.height = args.width_height
+        self.wh = args.width_height.split("x")
+        self.width: int = int(self.wh[0])
+        self.height: int = int(self.wh[1])
         if self.width < 100 or self.height < 100:
             self.width = 1920
             self.height = 1080
@@ -66,6 +68,8 @@ class GenerateVideo:
 
         if args.flip_horizontal and args.flip_vertical:  # flip in both directions
             self.flip = -1
+
+        self.gui = args.gui
 
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -144,8 +148,12 @@ class GenerateVideo:
         self.logger.info(
             f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + "." + self.output_format}.")
 
-        progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size,
-                            desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
+        if self.gui:
+            progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size,
+                                desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
+        else:
+            progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size,
+                                desc="Generation progress", unit="frames")
 
         # Process images in chunks
         for start in progress_bar:

@@ -88,11 +88,10 @@ class CommandLineParser:
         self.parser.add_argument(
             '-wh', '--width_height',
             dest="width_height",
-            type=int,
-            nargs=2,
-            metavar=("width", "height"),
-            default=[1920, 1080],
-            help='Width and height of image frames - default is (1920, 1080)'
+            type=str,
+            nargs='?',
+            default="1920x1080",
+            help='Width and height of image frames - default is (1920x1080)'
         )
         self.parser.add_argument(
             '-su', '--scale_up',
@@ -109,6 +108,13 @@ class CommandLineParser:
             nargs='?',
             default="avc1", # which is a H.264 encoder
             help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
+        )
+        self.parser.add_argument(
+            '-g', '--gui',
+            dest="gui",
+            action="store_true",
+            default=False,
+            help='beck-view-movie started from beck-view-movie-gui - default is false'
         )
 
     def parse_args(self) -> argparse.Namespace:
