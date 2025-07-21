@@ -11,6 +11,7 @@ from numpy import ndarray
 from tqdm import tqdm
 
 from getSortedFilenames import get_sorted_image_files
+from iagcwd import prepare_image
 from tqdm_logger import TqdmLogger
 
 
@@ -121,6 +122,7 @@ class GenerateVideo:
         img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
         img = cv2.flip(img, self.flip) if self.flip != 2 else img
         img = self.upscaling_function(img)
+        img = prepare_image(img_path, img)
         return img
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
