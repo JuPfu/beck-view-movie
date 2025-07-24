@@ -24,7 +24,7 @@ def main():
 
     generate_video: GenerateVideo = GenerateVideo(args)
 
-    generate_video.assemble_video(str(args.path / "frame*.png"))
+    generate_video.assemble_video()
 
 
 def sigint_handler(signum: int, frame: FrameType | None) -> None:

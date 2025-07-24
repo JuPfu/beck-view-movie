@@ -3,6 +3,7 @@ import os
 import sys
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
+from random import randint
 from typing import List
 
 import cv2
@@ -15,6 +16,7 @@ from tqdm_logger import TqdmLogger
 
 
 class GenerateVideo:
+
     def __init__(self, args: Namespace) -> None:
         """
         Initialize the GenerateVideo class.
@@ -22,6 +24,7 @@ class GenerateVideo:
 
         self._initialize_args(args)
         self._initialize_logging()
+        self._initialize_resolution()
         self._initialize_up_scaling()
         self._initialize_video_writer()
 
@@ -48,13 +51,7 @@ class GenerateVideo:
         self.fps: float = args.fps
         self.batch_size: int = min(max(1, args.batch_size), 500)
         self.num_workers: int = args.num_workers
-        self.wh = args.width_height.split("x")
-        self.width: int = int(self.wh[0])
-        self.height: int = int(self.wh[1])
-        if self.width < 100 or self.height < 100:
-            self.width = 1920
-            self.height = 1080
-
+        self.width_height = args.width_height
         self.scale_up = args.scale_up
         self.codec = args.codec
 
@@ -74,8 +71,28 @@ class GenerateVideo:
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         self.logger = logging.getLogger(__name__)
-        handler = logging.StreamHandler(sys.stdout)
-        self.logger.addHandler(handler)
+        if self.gui:
+            handler = logging.StreamHandler(sys.stdout)
+            self.logger.addHandler(handler)
+
+    def _initialize_resolution(self) -> None:
+
+        self.image_list: List[str] = get_sorted_image_files(str(self.path / "frame*.png"))
+
+        self.width = 1920
+        self.height = 1080
+        if self.width_height != "automatic":
+            self.wh: [str] = self.width_height.split("x")
+            self.width: int = int(self.wh[0]) if int(self.wh[0]) >= 100 else 1920
+            self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 100 else 1080
+        else:
+            index: int = randint(0, len(self.image_list) - 1)
+
+            test_image = cv2.imread(self.image_list[index])
+            (self.height, self.width, _) = test_image.shape
+
+        self.logger.info(
+            f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name) + "." + self.output_format}.")
 
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
@@ -139,26 +156,22 @@ class GenerateVideo:
 
         return processed_images
 
-    def assemble_video(self, path: str) -> None:
+    def assemble_video(self) -> None:
         """
         Create a video from images in the specified path using parallel processing in chunks.
         """
-        image_list: List[str] = get_sorted_image_files(path)
-
-        self.logger.info(
-            f"Creating video from {len(image_list)} 'frames*.png' files in {str(self.opath / self.name) + "." + self.output_format}.")
 
         if self.gui:
-            progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size,
+            progress_bar = tqdm(range(0, len(self.image_list), self.batch_size), unit_scale=self.batch_size,
                                 desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
         else:
-            progress_bar = tqdm(range(0, len(image_list), self.batch_size), unit_scale=self.batch_size,
+            progress_bar = tqdm(range(0, len(self.image_list), self.batch_size), unit_scale=self.batch_size,
                                 desc="Generation progress", unit="frames")
 
         # Process images in chunks
         for start in progress_bar:
             end: int = start + self.batch_size
-            batch = image_list[start:end]
+            batch = self.image_list[start:end]
 
             # Process the batch of images and collect the processed images
             processed_images = self.process_batch(batch)

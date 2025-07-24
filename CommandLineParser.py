@@ -90,8 +90,8 @@ class CommandLineParser:
             dest="width_height",
             type=str,
             nargs='?',
-            default="1920x1080",
-            help='Width and height of image frames - default is (1920x1080)'
+            default="automatic",
+            help='Width and height of image frames - default is "automatic" detection of width and height'
         )
         self.parser.add_argument(
             '-su', '--scale_up',
