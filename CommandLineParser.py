@@ -118,6 +118,46 @@ class CommandLineParser:
             help="Tone mapping algorithm to use for HDR processing."
         ),
         self.parser.add_argument(
+            "--drago-bias",
+            type=float,
+            default=2.2
+        ),
+        self.parser.add_argument(
+            "--reinhard-gamma",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--reinhard-intensity",
+            type=float,
+            default=0.0
+        ),
+        self.parser.add_argument(
+            "--reinhard-light-adapt",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--reinhard-color-adapt",
+            type=float,
+            default=0.0
+        ),
+        self.parser.add_argument(
+            "--mantiuk-scale",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--mantiuk-saturation",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--mantiuk-bias",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
             '-g', '--gui',
             dest="gui",
             action="store_true",

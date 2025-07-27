@@ -59,6 +59,13 @@ class GenerateVideo:
         if self.bracketing:
             self.batch_size = min(max(3, self.batch_size - (self.batch_size % 3)), 498)
             self.tone_mapper: str = getattr(args, "tone_mapper", "drago").lower()
+            self.drago_bias: float = getattr(args, "drago_bias", 2.2)
+            self.reinhard_gamma = getattr(args, "reinhard_gamma", 1.0)
+            self.reinhard_intensity: float = getattr(args, "reinhard_intensity", 0.0)
+            self.reinhard_light_adapt: float = getattr(args, "reinhard_light_adapt", 1.0)
+            self.reinhard_color_adapt: float = getattr(args, "reinhard_color_adapt", 0.0)
+            self.mantiuk_scale: float = getattr(args, "mantiuk_scale", 1.0)
+            self.mantiuk_saturation: float = getattr(args, "mantiuk_saturation", 1.0)
 
         self.num_workers: int = args.num_workers
         self.width_height = args.width_height
@@ -111,17 +118,21 @@ class GenerateVideo:
         self.merge_debevec = cv2.createMergeDebevec()
 
         if self.tone_mapper == "drago":
-            self.logger.info("Using TonemapDrago (bias=2.2)")
-            self.tone_map = cv2.createTonemapDrago(2.2)
+            self.logger.info(f"Using TonemapDrago (bias={self.drago_bias})")
+            self.tone_map = cv2.createTonemapDrago(self.drago_bias)
         elif self.tone_mapper == "reinhard":
-            self.logger.info("Using TonemapReinhard (intensity=0.0, light_adapt=1.0, color_adapt=0.0)")
-            self.tone_map = cv2.createTonemapReinhard(1.0, 0.0, 1.0, 0.0)
+            self.logger.info(f"Using TonemapReinhard (intensity={self.reinhard_intensity}, light_adapt={self.reinhard_light_adapt}, color_adapt={self.reinhard_color_adapt})")
+            self.tone_map = cv2.createTonemapReinhard(
+                gamma=self.reinhard_gamma,
+                intensity=self.reinhard_intensity,
+                light_adapt=self.reinhard_light_adapt,
+                color_adapt=self.reinhard_color_adapt
+            )
         elif self.tone_mapper == "mantiuk":
-            self.logger.info("Using TonemapMantiuk (scale=1.0, saturation=1.0)")
-            self.tone_map = cv2.createTonemapMantiuk(1.0, 1.0, 1.0)
+            self.logger.info(f"Using TonemapMantiuk (scale={self.mantiuk_scale}, saturation={self.mantiuk_saturation})")
+            self.tone_map = cv2.createTonemapMantiuk(self.mantiuk_scale, self.mantiuk_saturation, 1.0)
         else:
             raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
-
 
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
@@ -167,7 +178,6 @@ class GenerateVideo:
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             return list(executor.map(load_group, grouped_paths))
 
-
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         """
         Process a batch of images in parallel and return the processed images.
@@ -191,7 +201,7 @@ class GenerateVideo:
         # Step 2: Process HDR or single images
         def process(images: List[ndarray]) -> ndarray:
             if not self.bracketing:
-                return images[0]  # already flipped
+                return images[0]
             response = self.calibrate_debevec.process(images, self.times)
             hdr = self.merge_debevec.process(images, self.times, response)
             ldr = self.tone_map.process(hdr)
