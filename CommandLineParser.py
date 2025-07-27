@@ -158,6 +158,12 @@ class CommandLineParser:
             default=1.0
         ),
         self.parser.add_argument(
+            "--tone-mapper-preset",
+            type=str,
+            choices=["default", "cinematic", "natural", "highlight"],
+            default="default"
+        ),
+        self.parser.add_argument(
             '-g', '--gui',
             dest="gui",
             action="store_true",

@@ -19,10 +19,6 @@ from tqdm_logger import TqdmLogger
 class GenerateVideo:
 
     def __init__(self, args: Namespace) -> None:
-        """
-        Initialize the GenerateVideo class.
-        """
-
         self.calibrate_debevec: cv2.CalibrateDebevec
         self.merge_debevec: cv2.MergeDebevec
         self.tone_map = cv2.TonemapDrago
@@ -34,21 +30,6 @@ class GenerateVideo:
         self._initialize_video_writer()
 
     def _initialize_args(self, args: Namespace) -> None:
-        """
-        args:
-            path (Path): The input path containing images
-            opath (Path): The path to the directory for saving the video
-            name (str): Basename of the output video file
-            fps (int): Frames per second used when assembling the video
-            batch_size (int): Number of images to process per batch
-            num_workers (int): Number of worker threads to use for parallel processing
-            flip_horizontal (bool): Flip frames horizontally
-            flip_vertical (bool): Flip frames vertically
-            width_height: (str): widthxheight of frames
-            codec (str): Codec to be used for video
-            bracketing (bool): Bracketing flag
-        """
-
         self.path: pathlib.Path = args.path
         self.opath: pathlib.Path = args.opath
         self.name: str = os.path.splitext(args.name)[0]
@@ -56,16 +37,23 @@ class GenerateVideo:
         self.fps: float = args.fps
         self.batch_size: int = min(max(1, args.batch_size), 498)
         self.bracketing: bool = args.bracketing
+        self.tone_mapper_preset = getattr(args, "tone_mapper_preset", "default").lower()
+        self.tone_mapper: str = getattr(args, "tone_mapper", "drago").lower()
+
         if self.bracketing:
             self.batch_size = min(max(3, self.batch_size - (self.batch_size % 3)), 498)
-            self.tone_mapper: str = getattr(args, "tone_mapper", "drago").lower()
-            self.drago_bias: float = getattr(args, "drago_bias", 2.2)
-            self.reinhard_gamma = getattr(args, "reinhard_gamma", 1.0)
-            self.reinhard_intensity: float = getattr(args, "reinhard_intensity", 0.0)
-            self.reinhard_light_adapt: float = getattr(args, "reinhard_light_adapt", 1.0)
-            self.reinhard_color_adapt: float = getattr(args, "reinhard_color_adapt", 0.0)
-            self.mantiuk_scale: float = getattr(args, "mantiuk_scale", 1.0)
-            self.mantiuk_saturation: float = getattr(args, "mantiuk_saturation", 1.0)
+
+        self._apply_tone_mapper_preset()
+
+        # Allow overrides
+        self.drago_bias = getattr(args, "drago_bias", self.drago_bias)
+        self.reinhard_gamma = getattr(args, "reinhard_gamma", self.reinhard_gamma)
+        self.reinhard_intensity = getattr(args, "reinhard_intensity", self.reinhard_intensity)
+        self.reinhard_light_adapt = getattr(args, "reinhard_light_adapt", self.reinhard_light_adapt)
+        self.reinhard_color_adapt = getattr(args, "reinhard_color_adapt", self.reinhard_color_adapt)
+        self.mantiuk_scale = getattr(args, "mantiuk_scale", self.mantiuk_scale)
+        self.mantiuk_saturation = getattr(args, "mantiuk_saturation", self.mantiuk_saturation)
+        self.mantiuk_bias = getattr(args, "mantiuk_bias", self.mantiuk_bias)
 
         self.num_workers: int = args.num_workers
         self.width_height = args.width_height
@@ -79,10 +67,37 @@ class GenerateVideo:
         if args.flip_vertical:
             self.flip = 1
 
-        if args.flip_horizontal and args.flip_vertical:  # flip in both directions
+        if args.flip_horizontal and args.flip_vertical:
             self.flip = -1
 
         self.gui = args.gui
+
+    def _apply_tone_mapper_preset(self) -> None:
+        self.drago_bias = 2.2
+        self.reinhard_gamma = 1.0
+        self.reinhard_intensity = 0.0
+        self.reinhard_light_adapt = 1.0
+        self.reinhard_color_adapt = 0.0
+        self.mantiuk_scale = 1.0
+        self.mantiuk_saturation = 1.0
+        self.mantiuk_bias = 1.0
+
+        if self.tone_mapper_preset == "cinematic":
+            self.tone_mapper = "mantiuk"
+            self.mantiuk_scale = 0.9
+            self.mantiuk_saturation = 1.3
+            self.mantiuk_bias = 1.0
+
+        elif self.tone_mapper_preset == "natural":
+            self.tone_mapper = "reinhard"
+            self.reinhard_gamma = 1.2
+            self.reinhard_intensity = 0.0
+            self.reinhard_light_adapt = 1.0
+            self.reinhard_color_adapt = 0.2
+
+        elif self.tone_mapper_preset == "highlight":
+            self.tone_mapper = "drago"
+            self.drago_bias = 1.0
 
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -92,7 +107,6 @@ class GenerateVideo:
             self.logger.addHandler(handler)
 
     def _initialize_resolution(self) -> None:
-
         self.image_list: List[str] = get_sorted_image_files(self.bracketing, str(self.path))
 
         self.width = 1920
@@ -105,7 +119,6 @@ class GenerateVideo:
             index: int = randint(0, len(self.image_list) - 1)
             print(f" - {self.image_list[index]=}")
             test_image = cv2.imread(self.image_list[index])
-
             (self.height, self.width, _) = test_image.shape
 
         actual_frames = len(self.image_list) // 3 if self.bracketing else len(self.image_list)
@@ -117,36 +130,25 @@ class GenerateVideo:
         self.calibrate_debevec = cv2.createCalibrateDebevec()
         self.merge_debevec = cv2.createMergeDebevec()
 
+        self.logger.info(f"Tone mapper preset: {self.tone_mapper_preset} using: {self.tone_mapper}")
+
         if self.tone_mapper == "drago":
             self.logger.info(f"Using TonemapDrago (bias={self.drago_bias})")
             self.tone_map = cv2.createTonemapDrago(self.drago_bias)
+
         elif self.tone_mapper == "reinhard":
-            self.logger.info(f"Using TonemapReinhard (intensity={self.reinhard_intensity}, light_adapt={self.reinhard_light_adapt}, color_adapt={self.reinhard_color_adapt})")
-            self.tone_map = cv2.createTonemapReinhard(
-                gamma=self.reinhard_gamma,
-                intensity=self.reinhard_intensity,
-                light_adapt=self.reinhard_light_adapt,
-                color_adapt=self.reinhard_color_adapt
-            )
+            self.logger.info(f"Using TonemapReinhard (gamma={self.reinhard_gamma}, intensity={self.reinhard_intensity}, light_adapt={self.reinhard_light_adapt}, color_adapt={self.reinhard_color_adapt})")
+            self.tone_map = cv2.createTonemapReinhard(self.reinhard_gamma, self.reinhard_intensity, self.reinhard_light_adapt, self.reinhard_color_adapt)
+
         elif self.tone_mapper == "mantiuk":
-            self.logger.info(f"Using TonemapMantiuk (scale={self.mantiuk_scale}, saturation={self.mantiuk_saturation})")
-            self.tone_map = cv2.createTonemapMantiuk(self.mantiuk_scale, self.mantiuk_saturation, 1.0)
+            self.logger.info(f"Using TonemapMantiuk (scale={self.mantiuk_scale}, saturation={self.mantiuk_saturation}, bias={self.mantiuk_bias})")
+            self.tone_map = cv2.createTonemapMantiuk(self.mantiuk_scale, self.mantiuk_saturation, self.mantiuk_bias)
+
         else:
             raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
 
     def _initialize_video_writer(self) -> None:
-        # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
-
         resolution = (self.width, self.height)
-        # opencv codecs https://gist.github.com/takuma7/44f9ecb028ff00e2132e
-        #
-        # windows specific notes
-        #   output format changes with filename extension
-        #   successfully tested postfixes without checking of actual coding in generated files
-        #   avi
-        #   mp4
-        #   m4v
-        #   wmv
         fourcc = cv2.VideoWriter.fourcc(*self.codec)
         print(f"{fourcc=}")
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
@@ -155,16 +157,6 @@ class GenerateVideo:
                                             frameSize=resolution)
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
-        """
-        Preload image groups (each group is a list of file paths) in parallel and return loaded ndarrays.
-
-        Args:
-            grouped_paths (List[List[str]]): Groups of image paths (1 or 3 depending on bracketing).
-
-        Returns:
-            List[List[ndarray]]: Loaded image arrays grouped accordingly.
-        """
-
         def load_group(paths: List[str]) -> List[ndarray]:
             images = []
             for path in paths:
@@ -179,26 +171,14 @@ class GenerateVideo:
             return list(executor.map(load_group, grouped_paths))
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
-        """
-        Process a batch of images in parallel and return the processed images.
-
-        Args:
-            image_paths (List[str]): List of image file paths.
-
-        Returns:
-            List[ndarray]: List of processed images in the same order as the input list.
-        """
-
         def group(sequence, chunk_size) -> List[List[str]]:
             return [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
 
         group_size = 3 if self.bracketing else 1
         grouped_paths: List[List[str]] = group(image_paths, group_size)
 
-        # Step 1: Preload all groups
         preloaded_images: List[List[ndarray]] = self._preload_image_groups(grouped_paths)
 
-        # Step 2: Process HDR or single images
         def process(images: List[ndarray]) -> ndarray:
             if not self.bracketing:
                 return images[0]
@@ -211,10 +191,6 @@ class GenerateVideo:
             return list(executor.map(process, preloaded_images))
 
     def assemble_video(self) -> None:
-        """
-        Create a video from images in the specified path using parallel processing in chunks.
-        """
-
         if self.gui:
             progress_bar = tqdm(range(0, len(self.image_list), self.batch_size), unit_scale=self.batch_size,
                                 desc="Generation progress", unit="frames", file=TqdmLogger(self.logger), mininterval=5)
@@ -222,26 +198,18 @@ class GenerateVideo:
             progress_bar = tqdm(range(0, len(self.image_list), self.batch_size), unit_scale=self.batch_size,
                                 desc="Generation progress", unit="frames")
 
-        # Process images in chunks
         for start in progress_bar:
-            # if bracketing is on batch_size must be a multiple of exposures bracketing - at the moment this should be a multiple of three
             end: int = start + self.batch_size
             batch = self.image_list[start:end]
 
-            # Process the batch of images and collect the processed images
             processed_images = self.process_batch(batch)
 
-            # Write processed images to the video writer
             for img in processed_images:
                 self.video_writer.write(img)
                 del img
 
-        # Log completion
         self.logger.info(f"Video {str(self.opath / self.name) + "." + self.output_format} assembled successfully.")
 
     def __del__(self) -> None:
-        """
-        Destructor to release resources.
-        """
         if hasattr(self, "video_writer"):
             self.video_writer.release()
