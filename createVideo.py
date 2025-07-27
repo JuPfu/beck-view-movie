@@ -58,6 +58,8 @@ class GenerateVideo:
         self.bracketing: bool = args.bracketing
         if self.bracketing:
             self.batch_size = min(max(3, self.batch_size - (self.batch_size % 3)), 498)
+            self.tone_mapper: str = getattr(args, "tone_mapper", "drago").lower()
+
         self.num_workers: int = args.num_workers
         self.width_height = args.width_height
         self.codec: str = args.codec
@@ -107,7 +109,19 @@ class GenerateVideo:
         self.times: ndarray[np.float32] = np.asarray([128.0, 256.0, 64.0], dtype=np.float32)
         self.calibrate_debevec = cv2.createCalibrateDebevec()
         self.merge_debevec = cv2.createMergeDebevec()
-        self.tone_map = cv2.createTonemapDrago(2.2)
+
+        if self.tone_mapper == "drago":
+            self.logger.info("Using TonemapDrago (bias=2.2)")
+            self.tone_map = cv2.createTonemapDrago(2.2)
+        elif self.tone_mapper == "reinhard":
+            self.logger.info("Using TonemapReinhard (intensity=0.0, light_adapt=1.0, color_adapt=0.0)")
+            self.tone_map = cv2.createTonemapReinhard(1.0, 0.0, 1.0, 0.0)
+        elif self.tone_mapper == "mantiuk":
+            self.logger.info("Using TonemapMantiuk (scale=1.0, saturation=1.0)")
+            self.tone_map = cv2.createTonemapMantiuk(1.0, 1.0, 1.0)
+        else:
+            raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
+
 
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")

@@ -94,13 +94,6 @@ class CommandLineParser:
             help='Width and height of image frames - default is "automatic" detection of width and height'
         )
         self.parser.add_argument(
-            '-su', '--scale_up',
-            dest="scale_up",
-            action='store_true',
-            default=False,
-            help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no up-scaling'
-        )
-        self.parser.add_argument(
             '-c', '--codec',
             dest="codec",
             type=str,
@@ -117,6 +110,13 @@ class CommandLineParser:
             default=False,
             help='Take multiple exposures of one frame with varying exposure time - default is no bracketing, which means just one exposure per frame'
         )
+        self.parser.add_argument(
+            '-t', "--tone_mapper",
+            type=str,
+            choices=["drago", "reinhard", "mantiuk"],
+            default="drago",
+            help="Tone mapping algorithm to use for HDR processing."
+        ),
         self.parser.add_argument(
             '-g', '--gui',
             dest="gui",
