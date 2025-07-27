@@ -106,8 +106,16 @@ class CommandLineParser:
             type=str,
             choices=["avc1", "mp4v", "h263", "h264"],
             nargs='?',
-            default="avc1", # which is a H.264 encoder
+            default="avc1",  # which is a H.264 encoder
             help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
+        )
+        # Add arguments for exposure bracketing
+        self.parser.add_argument(
+            '-b', '--bracketing',
+            dest="bracketing",
+            action="store_true",
+            default=False,
+            help='Take multiple exposures of one frame with varying exposure time - default is no bracketing, which means just one exposure per frame'
         )
         self.parser.add_argument(
             '-g', '--gui',

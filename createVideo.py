@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 import sys
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
@@ -7,7 +8,7 @@ from random import randint
 from typing import List
 
 import cv2
-from cv2 import dnn_superres
+import numpy as np
 from numpy import ndarray
 from tqdm import tqdm
 
@@ -22,10 +23,14 @@ class GenerateVideo:
         Initialize the GenerateVideo class.
         """
 
+        self.calibrate_debevec: cv2.CalibrateDebevec
+        self.merge_debevec: cv2.MergeDebevec
+        self.tone_map = cv2.TonemapDrago
+
         self._initialize_args(args)
         self._initialize_logging()
         self._initialize_resolution()
-        self._initialize_up_scaling()
+        if self.bracketing: self._initialize_bracketing()
         self._initialize_video_writer()
 
     def _initialize_args(self, args: Namespace) -> None:
@@ -40,20 +45,22 @@ class GenerateVideo:
             flip_horizontal (bool): Flip frames horizontally
             flip_vertical (bool): Flip frames vertically
             width_height: (str): widthxheight of frames
-            scale_up (bool): To up-scale or not to up-scale
             codec (str): Codec to be used for video
+            bracketing (bool): Bracketing flag
         """
 
-        self.path = args.path
-        self.opath = args.opath
-        self.name = os.path.splitext(args.name)[0]
-        self.output_format = args.output_format
+        self.path: pathlib.Path = args.path
+        self.opath: pathlib.Path = args.opath
+        self.name: str = os.path.splitext(args.name)[0]
+        self.output_format: str = args.output_format
         self.fps: float = args.fps
-        self.batch_size: int = min(max(1, args.batch_size), 500)
+        self.batch_size: int = min(max(1, args.batch_size), 498)
+        self.bracketing: bool = args.bracketing
+        if self.bracketing:
+            self.batch_size = min(max(3, self.batch_size - (self.batch_size % 3)), 498)
         self.num_workers: int = args.num_workers
         self.width_height = args.width_height
-        self.scale_up = args.scale_up
-        self.codec = args.codec
+        self.codec: str = args.codec
 
         self.flip: int = 2  # no flip
 
@@ -77,27 +84,35 @@ class GenerateVideo:
 
     def _initialize_resolution(self) -> None:
 
-        self.image_list: List[str] = get_sorted_image_files(str(self.path / "frame*.png"))
+        self.image_list: List[str] = get_sorted_image_files(self.bracketing, str(self.path))
 
         self.width = 1920
         self.height = 1080
         if self.width_height != "automatic":
-            self.wh: [str] = self.width_height.split("x")
+            self.wh: List[str] = self.width_height.split("x")
             self.width: int = int(self.wh[0]) if int(self.wh[0]) >= 100 else 1920
             self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 100 else 1080
         else:
             index: int = randint(0, len(self.image_list) - 1)
-
+            print(f" - {self.image_list[index]=}")
             test_image = cv2.imread(self.image_list[index])
+
             (self.height, self.width, _) = test_image.shape
 
+        actual_frames = len(self.image_list) // 3 if self.bracketing else len(self.image_list)
         self.logger.info(
-            f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name) + "." + self.output_format}.")
+            f"Creating video from {actual_frames} processed frames with resolution {self.width} x {self.height} in {str(self.opath / self.name) + "." + self.output_format}.")
+
+    def _initialize_bracketing(self) -> None:
+        self.times: ndarray[np.float32] = np.asarray([128.0, 256.0, 64.0], dtype=np.float32)
+        self.calibrate_debevec = cv2.createCalibrateDebevec()
+        self.merge_debevec = cv2.createMergeDebevec()
+        self.tone_map = cv2.createTonemapDrago(2.2)
 
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
 
-        resolution = (3840, 2160) if self.scale_up else (self.width, self.height)
+        resolution = (self.width, self.height)
         # opencv codecs https://gist.github.com/takuma7/44f9ecb028ff00e2132e
         #
         # windows specific notes
@@ -107,38 +122,37 @@ class GenerateVideo:
         #   mp4
         #   m4v
         #   wmv
-        fourcc = cv2.VideoWriter_fourcc(*self.codec)
+        fourcc = cv2.VideoWriter.fourcc(*self.codec)
+        print(f"{fourcc=}")
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
                                             fourcc=fourcc,
                                             fps=self.fps,
                                             frameSize=resolution)
 
-    def _initialize_up_scaling(self) -> None:
-        if self.scale_up:
-            self.sr = dnn_superres.DnnSuperResImpl.create()
-            self.sr.readModel("ESPCN_x2.pb")
-            self.sr.setModel("espcn", 2)
-            self.upscaling_function = self.sr.upsample
-        else:
-            self.upscaling_function = self._no_scaling
-
-    def _no_scaling(self, img):
-        return img
-
-    def process_image(self, img_path: str) -> ndarray:
+    def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
         """
-        Process a single image: read, flip and return the processed image.
+        Preload image groups (each group is a list of file paths) in parallel and return loaded ndarrays.
 
         Args:
-            img_path (str): Path to the image file.
+            grouped_paths (List[List[str]]): Groups of image paths (1 or 3 depending on bracketing).
 
         Returns:
-            The processed image.
+            List[List[ndarray]]: Loaded image arrays grouped accordingly.
         """
-        img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
-        img = cv2.flip(img, self.flip) if self.flip != 2 else img
-        img = self.upscaling_function(img)
-        return img
+
+        def load_group(paths: List[str]) -> List[ndarray]:
+            images = []
+            for path in paths:
+                img = cv2.imread(path, cv2.IMREAD_COLOR)
+                if img is None:
+                    raise ValueError(f"Failed to load image: {path}")
+                img = cv2.flip(img, self.flip) if self.flip != 2 else img
+                images.append(img)
+            return images
+
+        with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
+            return list(executor.map(load_group, grouped_paths))
+
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         """
@@ -150,11 +164,27 @@ class GenerateVideo:
         Returns:
             List[ndarray]: List of processed images in the same order as the input list.
         """
-        with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
-            # Use map to process images in parallel and maintain order
-            processed_images = list(executor.map(self.process_image, image_paths))
 
-        return processed_images
+        def group(sequence, chunk_size) -> List[List[str]]:
+            return [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
+
+        group_size = 3 if self.bracketing else 1
+        grouped_paths: List[List[str]] = group(image_paths, group_size)
+
+        # Step 1: Preload all groups
+        preloaded_images: List[List[ndarray]] = self._preload_image_groups(grouped_paths)
+
+        # Step 2: Process HDR or single images
+        def process(images: List[ndarray]) -> ndarray:
+            if not self.bracketing:
+                return images[0]  # already flipped
+            response = self.calibrate_debevec.process(images, self.times)
+            hdr = self.merge_debevec.process(images, self.times, response)
+            ldr = self.tone_map.process(hdr)
+            return (ldr * 256).astype(dtype=np.uint8)
+
+        with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
+            return list(executor.map(process, preloaded_images))
 
     def assemble_video(self) -> None:
         """
@@ -170,6 +200,7 @@ class GenerateVideo:
 
         # Process images in chunks
         for start in progress_bar:
+            # if bracketing is on batch_size must be a multiple of exposures bracketing - at the moment this should be a multiple of three
             end: int = start + self.batch_size
             batch = self.image_list[start:end]
 
