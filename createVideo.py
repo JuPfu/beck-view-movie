@@ -117,7 +117,6 @@ class GenerateVideo:
             self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 100 else 1080
         else:
             index: int = randint(0, len(self.image_list) - 1)
-            print(f" - {self.image_list[index]=}")
             test_image = cv2.imread(self.image_list[index])
             (self.height, self.width, _) = test_image.shape
 
@@ -137,11 +136,14 @@ class GenerateVideo:
             self.tone_map = cv2.createTonemapDrago(self.drago_bias)
 
         elif self.tone_mapper == "reinhard":
-            self.logger.info(f"Using TonemapReinhard (gamma={self.reinhard_gamma}, intensity={self.reinhard_intensity}, light_adapt={self.reinhard_light_adapt}, color_adapt={self.reinhard_color_adapt})")
-            self.tone_map = cv2.createTonemapReinhard(self.reinhard_gamma, self.reinhard_intensity, self.reinhard_light_adapt, self.reinhard_color_adapt)
+            self.logger.info(
+                f"Using TonemapReinhard (gamma={self.reinhard_gamma}, intensity={self.reinhard_intensity}, light_adapt={self.reinhard_light_adapt}, color_adapt={self.reinhard_color_adapt})")
+            self.tone_map = cv2.createTonemapReinhard(self.reinhard_gamma, self.reinhard_intensity,
+                                                      self.reinhard_light_adapt, self.reinhard_color_adapt)
 
         elif self.tone_mapper == "mantiuk":
-            self.logger.info(f"Using TonemapMantiuk (scale={self.mantiuk_scale}, saturation={self.mantiuk_saturation}, bias={self.mantiuk_bias})")
+            self.logger.info(
+                f"Using TonemapMantiuk (scale={self.mantiuk_scale}, saturation={self.mantiuk_saturation}, bias={self.mantiuk_bias})")
             self.tone_map = cv2.createTonemapMantiuk(self.mantiuk_scale, self.mantiuk_saturation, self.mantiuk_bias)
 
         else:
@@ -150,7 +152,6 @@ class GenerateVideo:
     def _initialize_video_writer(self) -> None:
         resolution = (self.width, self.height)
         fourcc = cv2.VideoWriter.fourcc(*self.codec)
-        print(f"{fourcc=}")
         self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
                                             fourcc=fourcc,
                                             fps=self.fps,
