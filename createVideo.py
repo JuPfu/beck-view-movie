@@ -40,6 +40,9 @@ class GenerateVideo:
         self.tone_mapper_preset = getattr(args, "tone_mapper_preset", "default").lower()
         self.tone_mapper: str = getattr(args, "tone_mapper", "drago").lower()
 
+        self.left_crop = 230
+        self.right_crop = 230
+
         if self.bracketing:
             self.batch_size = min(max(3, self.batch_size - (self.batch_size % 3)), 498)
 
@@ -98,6 +101,23 @@ class GenerateVideo:
         elif self.tone_mapper_preset == "highlight":
             self.tone_mapper = "drago"
             self.drago_bias = 1.0
+
+        elif self.tone_mapper_preset == "soft":
+            self.tone_mapper = "reinhard"
+            self.reinhard_gamma = 1.1
+            self.reinhard_intensity = -0.3
+            self.reinhard_light_adapt = 0.9
+            self.reinhard_color_adapt = 0.3
+
+        elif self.tone_mapper_preset == "vivid":
+            self.tone_mapper = "mantiuk"
+            self.mantiuk_scale = 1.0
+            self.mantiuk_saturation = 1.5
+            self.mantiuk_bias = 1.1
+
+        elif self.tone_mapper_preset == "neutral":
+            self.tone_mapper = "drago"
+            self.drago_bias = 2.0
 
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -165,7 +185,15 @@ class GenerateVideo:
                 if img is None:
                     raise ValueError(f"Failed to load image: {path}")
                 img = cv2.flip(img, self.flip) if self.flip != 2 else img
+
+                # Crop out black borders before HDR merge
+                # Assume 16mm image center is ~10.3:7.5 inside 1920x1080
+                # Calculate crop dynamically if desired, or hardcode for now:
+                if self.bracketing:
+                    img = img[:, self.left_crop: img.shape[1] - self.right_crop]
+
                 images.append(img)
+
             return images
 
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
@@ -186,6 +214,19 @@ class GenerateVideo:
             response = self.calibrate_debevec.process(images, self.times)
             hdr = self.merge_debevec.process(images, self.times, response)
             ldr = self.tone_map.process(hdr)
+
+            # Pad back to 1920x1080
+            if self.bracketing:
+                ldr = cv2.copyMakeBorder(
+                    ldr,
+                    top=0,
+                    bottom=0,
+                    left=self.left_crop,
+                    right=self.right_crop,
+                    borderType=cv2.BORDER_REFLECT_101,
+                    value=(0, 0, 0)  # Black padding
+                )
+
             return (ldr * 256).astype(dtype=np.uint8)
 
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:

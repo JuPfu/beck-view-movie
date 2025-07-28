@@ -97,7 +97,7 @@ class CommandLineParser:
             '-c', '--codec',
             dest="codec",
             type=str,
-            choices=["avc1", "mp4v", "h263", "h264"],
+            choices=["avc1", "mp4v", "h263", "h264", "h265"],
             nargs='?',
             default="avc1",  # which is a H.264 encoder
             help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
@@ -160,7 +160,7 @@ class CommandLineParser:
         self.parser.add_argument(
             "--tone-mapper-preset",
             type=str,
-            choices=["default", "cinematic", "natural", "highlight"],
+            choices=["default", "cinematic", "natural", "highlight", "soft", "vivid", "neutral"],
             default="default"
         ),
         self.parser.add_argument(
