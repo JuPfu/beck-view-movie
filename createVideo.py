@@ -199,6 +199,24 @@ class GenerateVideo:
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             return list(executor.map(load_group, grouped_paths))
 
+    # see https://www.toptal.com/opencv/python-image-processing-in-computational-photography
+    # method can be removed if results are not satisfying
+    # this method removes intensities that are represented in very few pixels
+    def countTonemap(self, hdr: ndarray[np.float32], min_fraction=0.0005) -> ndarray[np.float32]:
+        counts, ranges = np.histogram(hdr, 256)
+        min_count = min_fraction * hdr.size
+        delta_range = ranges[1] - ranges[0]
+
+        image = hdr.copy()
+        for i in range(len(counts)):
+            if counts[i] < min_count:
+                image[image >= ranges[i + 1]] -= delta_range
+            ranges -= delta_range
+
+        normalized_image = cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+
+        return normalized_image
+
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:
         def group(sequence, chunk_size) -> List[List[str]]:
             return [sequence[i:i + chunk_size] for i in range(0, len(sequence), chunk_size)]
@@ -213,7 +231,8 @@ class GenerateVideo:
                 return images[0]
             response = self.calibrate_debevec.process(images, self.times)
             hdr = self.merge_debevec.process(images, self.times, response)
-            ldr = self.tone_map.process(hdr)
+            hdr_normalized = self.countTonemap(hdr, min_fraction=0.0005)
+            ldr = self.tone_map.process(hdr_normalized)
 
             # Pad back to 1920x1080
             if self.bracketing:
