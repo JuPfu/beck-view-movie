@@ -24,7 +24,6 @@ class GenerateVideo:
         self._initialize_args(args)
         self._initialize_logging()
         self._initialize_resolution()
-        self._initialize_up_scaling()
         self._initialize_video_writer()
 
     def _initialize_args(self, args: Namespace) -> None:
