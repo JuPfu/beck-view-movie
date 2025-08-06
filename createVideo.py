@@ -7,7 +7,6 @@ from random import randint
 from typing import List
 
 import cv2
-from cv2 import dnn_superres
 from numpy import ndarray
 from tqdm import tqdm
 
@@ -40,8 +39,8 @@ class GenerateVideo:
             flip_horizontal (bool): Flip frames horizontally
             flip_vertical (bool): Flip frames vertically
             width_height: (str): widthxheight of frames
-            scale_up (bool): To up-scale or not to up-scale
             codec (str): Codec to be used for video
+            gui (bool): Whether beck-view-movie has been started be beck-view-movie-gui and not from the command line
         """
 
         self.path = args.path
@@ -52,7 +51,6 @@ class GenerateVideo:
         self.batch_size: int = min(max(1, args.batch_size), 500)
         self.num_workers: int = args.num_workers
         self.width_height = args.width_height
-        self.scale_up = args.scale_up
         self.codec = args.codec
 
         self.flip: int = 2  # no flip
@@ -79,15 +77,19 @@ class GenerateVideo:
 
         self.image_list: List[str] = get_sorted_image_files(str(self.path / "frame*.png"))
 
+        if len(self.image_list) == 0:
+            self.logger.error(
+                f"Found {len(self.image_list)} images in {self.path} - beck-view-movie will be terminated.")
+            sys.exit(2)
+
         self.width = 1920
         self.height = 1080
         if self.width_height != "automatic":
             self.wh: [str] = self.width_height.split("x")
-            self.width: int = int(self.wh[0]) if int(self.wh[0]) >= 100 else 1920
-            self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 100 else 1080
+            self.width: int = int(self.wh[0]) if int(self.wh[0]) >= 48 else 1920
+            self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 48 else 1080
         else:
             index: int = randint(0, len(self.image_list) - 1)
-
             test_image = cv2.imread(self.image_list[index])
             (self.height, self.width, _) = test_image.shape
 
@@ -97,7 +99,7 @@ class GenerateVideo:
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
 
-        resolution = (3840, 2160) if self.scale_up else (self.width, self.height)
+        resolution = (self.width, self.height)
         # opencv codecs https://gist.github.com/takuma7/44f9ecb028ff00e2132e
         #
         # windows specific notes
@@ -113,18 +115,6 @@ class GenerateVideo:
                                             fps=self.fps,
                                             frameSize=resolution)
 
-    def _initialize_up_scaling(self) -> None:
-        if self.scale_up:
-            self.sr = dnn_superres.DnnSuperResImpl.create()
-            self.sr.readModel("ESPCN_x2.pb")
-            self.sr.setModel("espcn", 2)
-            self.upscaling_function = self.sr.upsample
-        else:
-            self.upscaling_function = self._no_scaling
-
-    def _no_scaling(self, img):
-        return img
-
     def process_image(self, img_path: str) -> ndarray:
         """
         Process a single image: read, flip and return the processed image.
@@ -137,7 +127,6 @@ class GenerateVideo:
         """
         img: ndarray = cv2.imread(img_path, cv2.IMREAD_COLOR)  # Using cv2.IMREAD_COLOR for faster reading
         img = cv2.flip(img, self.flip) if self.flip != 2 else img
-        img = self.upscaling_function(img)
         return img
 
     def process_batch(self, image_paths: List[str]) -> List[ndarray]:

@@ -12,7 +12,7 @@ class CommandLineParser:
         self.parser.add_argument('--version', action='version', version='1.0.0')
         # Add arguments for input path, output path, movie name and frames per second
         self.parser.add_argument(
-            '-p', '--input_path',
+            '-p', '--input-path',
             dest="path",
             type=pathlib.Path,
             nargs='?',
@@ -20,7 +20,7 @@ class CommandLineParser:
             help='Path to directory containing png frames - default is current directory.'
         )
         self.parser.add_argument(
-            '-o', '--output_path',
+            '-o', '--output-path',
             dest="opath",
             type=pathlib.Path,
             nargs='?',
@@ -36,7 +36,7 @@ class CommandLineParser:
             help='Name of mp4 movie - default is "beck-view-movie"'
         )
         self.parser.add_argument(
-            '-of', '--output_format',
+            '-of', '--output-format',
             dest="output_format",
             type=str,
             nargs='?',
@@ -45,7 +45,7 @@ class CommandLineParser:
             help='Output format of generated video file - allowed values "avi", "mp4", "mp4v", "m4v", "wmv" - default is "mp4"'
         )
         self.parser.add_argument(
-            '-fps', '--frames_per_second',
+            '-fps', '--frames-per-second',
             dest="fps",
             type=int,
             nargs='?',
@@ -55,7 +55,7 @@ class CommandLineParser:
         )
         # Add arguments for horizontal flip
         self.parser.add_argument(
-            '-fh', '--flip_horizontal',
+            '-fh', '--flip-horizontal',
             dest="flip_horizontal",
             action="store_true",
             default=False,
@@ -63,14 +63,14 @@ class CommandLineParser:
         )
         # Add arguments for vertical flip
         self.parser.add_argument(
-            '-fv', '--flip_vertical',
+            '-fv', '--flip-vertical',
             dest="flip_vertical",
             action="store_true",
-            default=False,
+            default=True,
             help='Flip frame vertically'
         )
         self.parser.add_argument(
-            '-w', '--number_of_workers',
+            '-w', '--number-of-workers',
             dest="num_workers",
             type=int,
             nargs='?',
@@ -78,7 +78,7 @@ class CommandLineParser:
             help='Number of parallel worker threads - default is 8 - affects speed of assembly'
         )
         self.parser.add_argument(
-            '-bs', '--batch_size',
+            '-bs', '--batch-size',
             dest="batch_size",
             type=int,
             nargs='?',
@@ -86,19 +86,12 @@ class CommandLineParser:
             help='Batch size for each worker thread - default is 100 - affects speed of assembly'
         )
         self.parser.add_argument(
-            '-wh', '--width_height',
+            '-wh', '--width-height',
             dest="width_height",
             type=str,
             nargs='?',
             default="automatic",
             help='Width and height of image frames - default is "automatic" detection of width and height'
-        )
-        self.parser.add_argument(
-            '-su', '--scale_up',
-            dest="scale_up",
-            action='store_true',
-            default=False,
-            help='Scale up movie to a resolution of 3840 x 2160 pixels - default is no up-scaling'
         )
         self.parser.add_argument(
             '-c', '--codec',
