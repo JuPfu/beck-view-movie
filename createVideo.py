@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 import sys
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
@@ -42,15 +43,17 @@ class GenerateVideo:
             gui (bool): Whether beck-view-movie has been started be beck-view-movie-gui and not from the command line
         """
 
-        self.path = args.path
-        self.opath = args.opath
-        self.name = os.path.splitext(args.name)[0]
-        self.output_format = args.output_format
+        self.path: pathlib.Path = args.path
+        self.opath: pathlib.Path = args.opath
+        self.name: str = os.path.splitext(args.name)[0]
+        self.output_format: str = args.output_format
         self.fps: float = args.fps
         self.batch_size: int = min(max(1, args.batch_size), 500)
         self.num_workers: int = args.num_workers
-        self.width_height = args.width_height
-        self.codec = args.codec
+        self.width_height: str = args.width_height
+        self.width: int = 1920;
+        self.height: int = 1080;
+        self.codec: str = args.codec
 
         self.flip: int = 2  # no flip
 
@@ -63,7 +66,7 @@ class GenerateVideo:
         if args.flip_horizontal and args.flip_vertical:  # flip in both directions
             self.flip = -1
 
-        self.gui = args.gui
+        self.gui: bool = args.gui
 
     def _initialize_logging(self) -> None:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -74,26 +77,24 @@ class GenerateVideo:
 
     def _initialize_resolution(self) -> None:
 
-        self.image_list: List[str] = get_sorted_image_files(str(self.path / "frame*.png"))
+        self.image_list: List[str] = get_sorted_image_files(self.path / "frame*.png")
 
         if len(self.image_list) == 0:
             self.logger.error(
                 f"Found {len(self.image_list)} images in {self.path} - beck-view-movie will be terminated.")
             sys.exit(2)
 
-        self.width = 1920
-        self.height = 1080
         if self.width_height != "automatic":
             self.wh: [str] = self.width_height.split("x")
-            self.width: int = int(self.wh[0]) if int(self.wh[0]) >= 48 else 1920
-            self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 48 else 1080
+            self.width = int(self.wh[0]) if int(self.wh[0]) >= 48 else 1920
+            self.height = int(self.wh[1]) if int(self.wh[1]) >= 48 else 1080
         else:
             index: int = randint(0, len(self.image_list) - 1)
-            test_image = cv2.imread(self.image_list[index])
+            test_image: ndarray = cv2.imread(self.image_list[index])
             (self.height, self.width, _) = test_image.shape
 
         self.logger.info(
-            f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name) + "." + self.output_format}.")
+            f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name)}.{self.output_format}.")
 
     def _initialize_video_writer(self) -> None:
         # self.logger.info(f"Build details: {cv2.getBuildInformation()}")
@@ -140,7 +141,7 @@ class GenerateVideo:
         """
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             # Use map to process images in parallel and maintain order
-            processed_images = list(executor.map(self.process_image, image_paths))
+            processed_images: List[ndarray] = list(executor.map(self.process_image, image_paths))
 
         return processed_images
 
@@ -159,10 +160,10 @@ class GenerateVideo:
         # Process images in chunks
         for start in progress_bar:
             end: int = start + self.batch_size
-            batch = self.image_list[start:end]
+            batch: List[str] = self.image_list[start:end]
 
             # Process the batch of images and collect the processed images
-            processed_images = self.process_batch(batch)
+            processed_images: List[ndarray] = self.process_batch(batch)
 
             # Write processed images to the video writer
             for img in processed_images:
@@ -170,7 +171,7 @@ class GenerateVideo:
                 del img
 
         # Log completion
-        self.logger.info(f"Video {str(self.opath / self.name) + "." + self.output_format} assembled successfully.")
+        self.logger.info(f"Video {str(self.opath / self.name)}.{self.output_format} assembled successfully.")
 
     def __del__(self) -> None:
         """
