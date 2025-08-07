@@ -1,0 +1,1 @@
+pyinstaller --onefile --name "beck-view-movie-jp.exe" --add-binary "C:/Users/Peter lokal/PycharmProjects/beck-view-movie\build\lib.win-amd64-cpython-313\createVideo.cp313-win_amd64.pyd:build\lib.win-amd64-cpython-313" main.py
