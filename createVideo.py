@@ -140,10 +140,8 @@ class GenerateVideo:
             test_image = cv2.imread(self.image_list[index])
             (self.height, self.width, _) = test_image.shape
 
-        actual_frames = len(self.image_list) // 3 if self.bracketing else len(self.image_list)
         self.logger.info(
-            f"Creating video from {actual_frames} processed frames with resolution {self.width} x {self.height} in {str(self.opath / self.name) + "." + self.output_format}.")
-
+            f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name)}.{self.output_format}.")
     def _initialize_bracketing(self) -> None:
         self.times: ndarray[np.float32] = np.asarray([128.0, 256.0, 64.0], dtype=np.float32)
         self.calibrate_debevec = cv2.createCalibrateDebevec()
@@ -269,7 +267,8 @@ class GenerateVideo:
                 self.video_writer.write(img)
                 del img
 
-        self.logger.info(f"Video {str(self.opath / self.name) + "." + self.output_format} assembled successfully.")
+        # Log completion
+        self.logger.info(f"Video {str(self.opath / self.name)}.{self.output_format} assembled successfully.")
 
     def __del__(self) -> None:
         if hasattr(self, "video_writer"):
