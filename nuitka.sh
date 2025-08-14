@@ -1,1 +1,2 @@
-python3 -m nuitka  --product-name="beck-view-movie" --standalone --onefile  --macos-app-icon=beck-view-movie.png --static-libpython=no -o "beck-view-movie" main.py
+rm -rf main.build main.dist main.onefile-build
+python3 -m nuitka --product-name="beck-view-movie" --standalone --macos-app-icon=beck-view-movie.png --onefile --enable-plugin=tk-inter --tcl-library-dir=/opt/homebrew/Cellar/tcl-tk/9.0.2/lib --tk-library-dir=/opt/homebrew/Cellar/tcl-tk/9.0.2/lib --static-libpython=no -o "beck-view-movie" main.py
