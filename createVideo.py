@@ -136,12 +136,16 @@ class GenerateVideo:
             self.width: int = int(self.wh[0]) if int(self.wh[0]) >= 100 else 1920
             self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 100 else 1080
         else:
-            index: int = randint(0, len(self.image_list) - 1)
-            test_image = cv2.imread(self.image_list[index])
-            (self.height, self.width, _) = test_image.shape
+            if len(self.image_list) > 0:
+                index: int = randint(0, len(self.image_list) - 1)
+                test_image = cv2.imread(self.image_list[index])
+                (self.height, self.width, _) = test_image.shape
+            else:
+                self.logger.error("No images found in {str(self.path)}")
 
         self.logger.info(
             f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name)}.{self.output_format}.")
+
     def _initialize_bracketing(self) -> None:
         self.times: ndarray[np.float32] = np.asarray([128.0, 256.0, 64.0], dtype=np.float32)
         self.calibrate_debevec = cv2.createCalibrateDebevec()
