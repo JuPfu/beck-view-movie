@@ -141,7 +141,7 @@ class GenerateVideo:
                 test_image = cv2.imread(self.image_list[index])
                 (self.height, self.width, _) = test_image.shape
             else:
-                self.logger.error("No images found in {str(self.path)}")
+                self.logger.error(f"No images found in {str(self.path)}")
 
         self.logger.info(
             f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name)}.{self.output_format}.")
