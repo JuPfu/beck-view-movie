@@ -27,12 +27,6 @@ def main():
     generate_video.assemble_video()
 
 
-def sigint_handler(signum: int, frame: FrameType | None) -> None:
-    signame: str = signal.Signals(signum).name
-    print(f"\nProgram terminated by signal '{signame}' at {frame}")
-    sys.exit(1)
-
-
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()

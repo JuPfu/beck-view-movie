@@ -1,24 +1,28 @@
-import pathlib
+import os
 import re
-from pathlib import Path
 from typing import List
 
 
-def get_sorted_image_files(path: Path) -> List[str]:
-    # Use pathlib.Path to resolve the path
-    _path: Path = Path(path)
-    print(f"getSortedImageFiles: {_path}")
-    # Use glob to get a list of matching files
-    file_list = path.parent.glob(_path.name)
+def get_sorted_image_files(bracketing: bool, path: str = ".") -> List[str]:
+    filenames: List[tuple[str, str]] = []
 
-    # Filter only regular files
-    file_list = filter(lambda file: file.is_file(), file_list)
+    pattern = re.compile(r"^(\D*)(\d{5})([a-c])$") if bracketing else re.compile(r"^(\D*)(\d{5})(a)$")
 
-    # Define a regular expression pattern for sorting
-    pattern = re.compile(r"^(\D*)(\d+)")
+    for filename in os.listdir(path):
+        match = pattern.match(os.path.splitext(filename)[0])
+        if match:
+            abs_path = os.path.abspath(os.path.join(path, filename))
+            if os.path.isfile(abs_path):
+                filenames.append((abs_path, filename))
 
-    # Sort the file list based on the numeric part of the filenames
-    sorted_files = sorted(file_list, key=lambda s: int(pattern.match(s.stem).group(2)))
+    # Sort first by frame number, then by exposure label (a, b, c)
+    sorted_filenames = sorted(
+        filenames,
+        key=lambda s: (pattern.match(os.path.splitext(s[1])[0]).group(2),
+                       pattern.match(os.path.splitext(s[1])[0]).group(3))
+    )
 
-    # Convert Path objects to strings
-    return [str(file) for file in sorted_files]
+    if bracketing and len(sorted_filenames) % 3 != 0:
+        print(f"Warning: {len(sorted_filenames) % 3} files do not fit complete exposure groups.")
+
+    return [x[0] for x in sorted_filenames]

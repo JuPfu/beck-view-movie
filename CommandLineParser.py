@@ -97,11 +97,72 @@ class CommandLineParser:
             '-c', '--codec',
             dest="codec",
             type=str,
-            choices=["avc1", "mp4v", "h263", "h264"],
+            choices=["avc1", "mp4v", "h263", "h264", "h265"],
             nargs='?',
-            default="avc1", # which is a H.264 encoder
+            default="avc1",  # which is a H.264 encoder
             help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
         )
+        # Add arguments for exposure bracketing
+        self.parser.add_argument(
+            '-b', '--bracketing',
+            dest="bracketing",
+            action="store_true",
+            default=False,
+            help='Take multiple exposures of one frame with varying exposure time - default is no bracketing, which means just one exposure per frame'
+        )
+        self.parser.add_argument(
+            '-t', "--tone_mapper",
+            type=str,
+            choices=["drago", "reinhard", "mantiuk"],
+            default="drago",
+            help="Tone mapping algorithm to use for HDR processing."
+        ),
+        self.parser.add_argument(
+            "--drago-bias",
+            type=float,
+            default=2.2
+        ),
+        self.parser.add_argument(
+            "--reinhard-gamma",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--reinhard-intensity",
+            type=float,
+            default=0.0
+        ),
+        self.parser.add_argument(
+            "--reinhard-light-adapt",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--reinhard-color-adapt",
+            type=float,
+            default=0.0
+        ),
+        self.parser.add_argument(
+            "--mantiuk-scale",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--mantiuk-saturation",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--mantiuk-bias",
+            type=float,
+            default=1.0
+        ),
+        self.parser.add_argument(
+            "--tone-mapper-preset",
+            type=str,
+            choices=["default", "cinematic", "natural", "highlight", "soft", "vivid", "neutral"],
+            default="default"
+        ),
         self.parser.add_argument(
             '-g', '--gui',
             dest="gui",
