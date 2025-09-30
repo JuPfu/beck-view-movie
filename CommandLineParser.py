@@ -40,7 +40,7 @@ class CommandLineParser:
             dest="output_format",
             type=str,
             nargs='?',
-            choices=["avi", "mp4", "m4v", "wmv", "mov"],
+            choices=["avi", "mkv", "mp4", "m4v", "wmv", "mov"],
             default="mp4",
             help='Output format of generated video file - allowed values "avi", "mp4", "mp4v", "m4v", "wmv" - default is "mp4"'
         )
@@ -97,7 +97,7 @@ class CommandLineParser:
             '-c', '--codec',
             dest="codec",
             type=str,
-            choices=["avc1", "mp4v", "h263", "h264", "h265"],
+            choices=["avc1", "h263", "h264", "h265", "mjpg", "mpv4", "wmv", "xvid"],
             nargs='?',
             default="avc1",  # which is a H.264 encoder
             help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
