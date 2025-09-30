@@ -40,7 +40,7 @@ class CommandLineParser:
             dest="output_format",
             type=str,
             nargs='?',
-            choices=["avi", "mkv", "mp4", "m4v", "wmv", "mov"],
+            choices=["avi", "mkv", "mov", "mp4", "m4v", "wmv"],
             default="mp4",
             help='Output format of generated video file - allowed values "avi", "mp4", "mp4v", "m4v", "wmv" - default is "mp4"'
         )
