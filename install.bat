@@ -1,9 +1,10 @@
-rmdir build
-rmdir dist
-del *.c *.pyd
+rmdir /S /Q build
+rmdir /S /Q dist
+del *.c
+del *.pyd
 python setup.py build_ext --inplace
 mkdir dist
-move build\lib.win-amd64-cpython-313\*.pyd dist
+move *.pyd dist
 pyinstaller beck-view-movie.spec --noconfirm
-move /y dist\beck-view-movie.exe .
-echo "Executable `beck-view-movie.exe` ready for use in %CD%"
+copy /Y dist\beck-view-movie.exe "%CD%""
+echo "Executable `beck-view-movie.exe` ready for usage in directory %CD%"
