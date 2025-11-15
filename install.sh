@@ -1,6 +1,6 @@
-rm -rf build dist
 rm -rf *.c *.so
-python setup.py build_ext --inplace
+python setup.py clean -a
+python setup.py build_ext -i
 mkdir -p dist
 mv *.so dist/
 pyinstaller beck-view-movie.spec --noconfirm

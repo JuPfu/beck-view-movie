@@ -1,8 +1,8 @@
-rmdir /S /Q build
 rmdir /S /Q dist
 del *.c
 del *.pyd
-python setup.py build_ext --inplace
+python setup.py clean -a
+python setup.py build_ext -i
 mkdir dist
 move *.pyd dist
 pyinstaller beck-view-movie.spec --noconfirm
