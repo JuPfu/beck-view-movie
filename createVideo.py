@@ -179,9 +179,8 @@ class GenerateVideo:
             [
                 "ffmpeg",
                 "-hide_banner",
-                "-loglevel", "error",  # change to "info" for debugging
+                "-loglevel", "error",
                 "-stats",
-
                 "-y",
 
                 # -------- RAW INPUT --------
@@ -189,32 +188,22 @@ class GenerateVideo:
                 "-pix_fmt", "bgr24",
                 "-video_size", f"{self.width}x{self.height}",
                 "-framerate", str(self.fps),
-
-                # IMPORTANT: declare full-range RGB input
-                "-color_range", "pc",
-                "-colorspace", "bt709",
-                "-color_primaries", "bt709",
-                "-color_trc", "bt709",
-
                 "-i", "-",
 
                 # -------- ENCODING --------
-                "-c:v", "libx264",
+                "-c:v", "libx264rgb",
 
-                # Preserve chroma and avoid subsampling
-                "-pix_fmt", "yuv444p",
+                # Stay RGB, no YUV conversion
+                "-pix_fmt", "bgr24",
                 "-profile:v", "high444",
 
-                # Quality / determinism
+                # Quality
                 "-crf", "10",
                 "-preset", "slow",
 
-                # Disable perceptual tricks (film scan friendly)
+                # Disable psychovisual tricks
                 "-x264-params",
-                "aq-mode=0:psy-rd=0:deblock=0,0:colormatrix=bt709",
-
-                # Avoid MP4 faststart confusion during debugging
-                "-movflags", "+faststart",
+                "aq-mode=0:psy-rd=0:deblock=0,0",
 
                 output
             ],
