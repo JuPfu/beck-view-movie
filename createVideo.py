@@ -172,7 +172,6 @@ class GenerateVideo:
         else:
             raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
 
-    import subprocess
 
     def _initialize_video_writer(self) -> None:
         output = str(self.opath / self.name) + "." + self.output_format
