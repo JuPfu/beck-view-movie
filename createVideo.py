@@ -185,6 +185,8 @@ class GenerateVideo:
                 "-pix_fmt", "bgr24",
                 "-s", f"{self.width}x{self.height}",
                 "-r", str(self.fps),
+                "-color_range", "pc",
+                "-colorspace", "bt709",
                 "-i", "-",
 
                 # --- FILM-SAFE SETTINGS ---
