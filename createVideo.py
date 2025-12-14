@@ -184,6 +184,8 @@ class GenerateVideo:
                 "-pix_fmt", "bgr24",
                 "-s", f"{self.width}x{self.height}",
                 "-r", str(self.fps),
+                "-vf",
+                "scale=in_range=full:out_range=full:in_color_matrix=bt709:out_color_matrix=bt709",
                 "-color_range", "pc",
                 "-colorspace", "bt709",
                 "-i", "-",
