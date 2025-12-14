@@ -2,6 +2,7 @@ import logging
 import os
 import pathlib
 import sys
+import subprocess
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
 from random import randint
@@ -171,13 +172,35 @@ class GenerateVideo:
         else:
             raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
 
+    import subprocess
+
     def _initialize_video_writer(self) -> None:
-        resolution = (self.width, self.height)
-        fourcc = cv2.VideoWriter.fourcc(*self.codec)
-        self.video_writer = cv2.VideoWriter(str(self.opath / self.name) + "." + self.output_format,
-                                            fourcc=fourcc,
-                                            fps=self.fps,
-                                            frameSize=resolution)
+        output = str(self.opath / self.name) + "." + self.output_format
+
+        self.ffmpeg = subprocess.Popen(
+            [
+                "ffmpeg",
+                "-y",
+                "-f", "rawvideo",
+                "-pix_fmt", "bgr24",
+                "-s", f"{self.width}x{self.height}",
+                "-r", str(self.fps),
+                "-i", "-",
+
+                # --- FILM-SAFE SETTINGS ---
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv444p",
+                "-profile:v", "high444",
+                "-crf", "10",
+                "-preset", "slow",
+                "-x264-params",
+                "psy-rd=0:aq-mode=0:deblock=0,0",
+
+                output
+            ],
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
         def load_group(paths: List[str]) -> List[ndarray]:
@@ -268,12 +291,12 @@ class GenerateVideo:
             processed_images = self.process_batch(batch)
 
             for img in processed_images:
-                self.video_writer.write(img)
+                self.ffmpeg.stdin.write(img.tobytes())
                 del img
+
+        self.ffmpeg.stdin.close()
+        self.ffmpeg.wait()
 
         # Log completion
         self.logger.info(f"Video {str(self.opath / self.name)}.{self.output_format} assembled successfully.")
 
-    def __del__(self) -> None:
-        if hasattr(self, "video_writer"):
-            self.video_writer.release()
