@@ -174,7 +174,10 @@ class GenerateVideo:
 
 
     def _initialize_video_writer(self) -> None:
-        output = str(self.opath / self.name) + "." + self.output_format
+        # master = str(self.opath / f"{self.name}_master.mov")
+        delivery = str(self.opath / f"{self.name}_delivery.mp4")
+        # output = str(self.opath / self.name) + "." + self.output_format
+
         self.ffmpeg = subprocess.Popen(
             [
                 "ffmpeg",
@@ -183,7 +186,7 @@ class GenerateVideo:
                 "-stats",
                 "-y",
 
-                # ---------- RAW INPUT ----------
+                # -------- RAW INPUT --------
                 "-f", "rawvideo",
                 "-pix_fmt", "bgr24",
                 "-video_size", f"{self.width}x{self.height}",
@@ -197,28 +200,27 @@ class GenerateVideo:
 
                 "-i", "-",
 
-                # ---------- PRORES ----------
-                "-c:v", "prores_ks",
+                # ================= DELIVERY =================
+                "-map", "0:v:0",
 
-                # ProRes 4444 (highest quality)
-                "-profile:v", "4444",
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",  # compatibility
+                "-profile:v", "high",
+                "-level", "4.2",
+                "-crf", "18",
+                "-preset", "slow",
 
-                # 10-bit 4:4:4
-                "-pix_fmt", "yuv444p10le",
-
-                # Explicit output metadata
-                "-color_range", "pc",
                 "-colorspace", "bt709",
                 "-color_primaries", "bt709",
                 "-color_trc", "bt709",
 
-                # MOV container
-                "-movflags", "+write_colr",
+                "-movflags", "+faststart",
 
-                output
+                delivery,
             ],
             stdin=subprocess.PIPE
         )
+
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
         def load_group(paths: List[str]) -> List[ndarray]:
