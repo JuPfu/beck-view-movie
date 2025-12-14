@@ -175,34 +175,53 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         output = str(self.opath / self.name) + "." + self.output_format
-        print(f"write film to {output}")
         self.ffmpeg = subprocess.Popen(
             [
                 "ffmpeg",
+                "-hide_banner",
+                "-loglevel", "error",  # change to "info" for debugging
+                "-stats",
+
                 "-y",
+
+                # -------- RAW INPUT --------
                 "-f", "rawvideo",
                 "-pix_fmt", "bgr24",
-                "-s", f"{self.width}x{self.height}",
-                "-r", str(self.fps),
-                "-vf",
-                "scale=in_range=full:out_range=full:in_color_matrix=bt709:out_color_matrix=bt709",
+                "-video_size", f"{self.width}x{self.height}",
+                "-framerate", str(self.fps),
+
+                # IMPORTANT: declare full-range RGB input
                 "-color_range", "pc",
                 "-colorspace", "bt709",
+                "-color_primaries", "bt709",
+                "-color_trc", "bt709",
+
                 "-i", "-",
 
-                # --- FILM-SAFE SETTINGS ---
+                # -------- ENCODING --------
                 "-c:v", "libx264",
+
+                # Preserve chroma and avoid subsampling
                 "-pix_fmt", "yuv444p",
                 "-profile:v", "high444",
+
+                # Quality / determinism
                 "-crf", "10",
                 "-preset", "slow",
+
+                # Disable perceptual tricks (film scan friendly)
                 "-x264-params",
-                "psy-rd=0:aq-mode=0:deblock=0,0",
+                "aq-mode=0:psy-rd=0:deblock=0,0:colormatrix=bt709",
+
+                # Avoid MP4 faststart confusion during debugging
+                "-movflags", "+faststart",
 
                 output
             ],
             stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            bufsize=10 ** 8
         )
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
