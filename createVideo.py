@@ -176,7 +176,7 @@ class GenerateVideo:
 
     def _initialize_video_writer(self) -> None:
         output = str(self.opath / self.name) + "." + self.output_format
-
+        print(f"write film to {output}")
         self.ffmpeg = subprocess.Popen(
             [
                 "ffmpeg",
@@ -295,7 +295,7 @@ class GenerateVideo:
                 del img
 
         self.ffmpeg.stdin.close()
-        self.ffmpeg.wait()
+        # self.ffmpeg.wait()
 
         # Log completion
         self.logger.info(f"Video {str(self.opath / self.name)}.{self.output_format} assembled successfully.")
