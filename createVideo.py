@@ -183,34 +183,41 @@ class GenerateVideo:
                 "-stats",
                 "-y",
 
-                # -------- RAW INPUT --------
+                # ---------- RAW INPUT ----------
                 "-f", "rawvideo",
                 "-pix_fmt", "bgr24",
                 "-video_size", f"{self.width}x{self.height}",
                 "-framerate", str(self.fps),
+
+                # Full-range RGB input
+                "-color_range", "pc",
+                "-colorspace", "bt709",
+                "-color_primaries", "bt709",
+                "-color_trc", "bt709",
+
                 "-i", "-",
 
-                # -------- ENCODING --------
-                "-c:v", "libx264rgb",
+                # ---------- PRORES ----------
+                "-c:v", "prores_ks",
 
-                # Stay RGB, no YUV conversion
-                "-pix_fmt", "bgr24",
-                "-profile:v", "high444",
+                # ProRes 4444 (highest quality)
+                "-profile:v", "4444",
 
-                # Quality
-                "-crf", "10",
-                "-preset", "slow",
+                # 10-bit 4:4:4
+                "-pix_fmt", "yuv444p10le",
 
-                # Disable psychovisual tricks
-                "-x264-params",
-                "aq-mode=0:psy-rd=0:deblock=0,0",
+                # Explicit output metadata
+                "-color_range", "pc",
+                "-colorspace", "bt709",
+                "-color_primaries", "bt709",
+                "-color_trc", "bt709",
+
+                # MOV container
+                "-movflags", "+write_colr",
 
                 output
             ],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            bufsize=10 ** 8
+            stdin=subprocess.PIPE
         )
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
