@@ -1,14 +1,14 @@
 import logging
 import os
 import pathlib
-import sys
 import subprocess
+import sys
+import threading
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from random import randint
 from typing import List
-
-from datetime import datetime
 
 import cv2
 import numpy as np
@@ -226,7 +226,7 @@ class GenerateVideo:
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "error",
-            "-stats",
+            "-nostats",
             "-y",
 
             # ---- RAW INPUT ----
@@ -263,7 +263,26 @@ class GenerateVideo:
 
         cmd.append(output)
 
-        self.ffmpeg = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        self.ffmpeg = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self._pipe_ffmpeg_stderr_to_logger()
+
+    def _pipe_ffmpeg_stderr_to_logger(self):
+        def reader():
+            for line in self.ffmpeg.stderr:
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Classify severity
+                if "error" in line.lower():
+                    self.logger.error(f"[ffmpeg] {line}")
+                elif "warning" in line.lower():
+                    self.logger.warning(f"[ffmpeg] {line}")
+                else:
+                    self.logger.info(f"[ffmpeg] {line}")
+
+        t = threading.Thread(target=reader, daemon=True)
+        t.start()
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
         def load_group(paths: List[str]) -> List[ndarray]:
@@ -362,4 +381,3 @@ class GenerateVideo:
 
         # Log completion
         self.logger.info(f"Video {str(self.opath / self.name)}.{self.output_format} assembled successfully.")
-
