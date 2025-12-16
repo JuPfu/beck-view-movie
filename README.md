@@ -87,6 +87,119 @@ In this example, the program will generate a movie with the resolution of 1280 x
 
 You can run the program without any arguments to use the default values for each option.
 
+
+Got it 👍 — here is a **clean, GitHub-flavoured Markdown** section, no custom blocks, no special syntax, and phrased for README consumption. You can paste this **as-is** into `README.md`.
+
+---
+
+## 🎞️ Output Quality Levels
+
+Beck-View-Movie provides several predefined **quality levels** to balance **encoding speed**, **file size**, and **image fidelity**.
+All levels use **FFmpeg with x264** and are tuned specifically for scanned film material (Super-8 / 16 mm), where grain, fine texture, and tonal stability are critical.
+
+### Overview
+
+| Quality | Intended Use                    | Encoding Speed | File Size  | Image Fidelity |
+| ------: | ------------------------------- | -------------- | ---------- | -------------- |
+| preview | Fast checks, UI preview         | Very fast      | Very small | Low–Medium     |
+|    good | Everyday viewing                | Fast           | Small      | Good           |
+|  better | High-quality delivery (default) | Medium         | Medium     | Very good      |
+|    best | Near-master delivery            | Slow           | Large      | Excellent      |
+
+---
+
+## preview
+
+**Purpose:** Fast iteration, GUI preview, test runs
+
+**Characteristics**
+
+* Minimal encoding complexity
+* Very fast turnaround
+* Suitable for checking framing, exposure, tone-mapping presets
+
+**Trade-offs**
+
+* Film grain is smoothed
+* Fine detail may be lost
+* Not suitable for final delivery
+
+Use this mode when speed matters more than image quality.
+
+---
+
+## good
+
+**Purpose:** Casual viewing and sharing
+
+**Characteristics**
+
+* Balanced speed and quality
+* Broad player compatibility
+* Reasonable grain preservation
+
+**Trade-offs**
+
+* Some grain simplification
+* Minor banding possible in flat areas
+
+A good choice for quick exports with acceptable visual quality.
+
+---
+
+## better
+
+**Purpose:** High-quality delivery / archival viewing
+
+**Characteristics**
+
+* Careful compression
+* Stable tones and edges
+* Film grain preserved without exaggeration
+* Consistent frame-to-frame behaviour
+
+**Trade-offs**
+
+* Slower encoding
+* Larger files than *good*
+
+Recommended for most users who digitise film seriously.
+
+---
+
+## best (default)
+
+**Purpose:** Maximum image fidelity (near-master delivery)
+
+**Characteristics**
+
+* Very slow encoding
+* Minimal psycho-visual optimisations
+* Grain treated as image detail, not noise
+* No artificial sharpening or contrast boosting
+
+**Trade-offs**
+
+* Long encoding times
+* Large output files
+
+Choose this mode when image quality is paramount and encoding time is secondary.
+
+---
+
+## Notes on Film Digitisation
+
+All quality levels are tuned for scanned film sources:
+
+* No aggressive adaptive quantisation
+* No contrast-pumping psycho-visual tricks
+* Stable grain reproduction across frames
+* Explicit handling of full-range RGB → BT.709
+
+If unsure, start with **better** — it offers the best compromise between quality, speed, and file size.
+
+---
+
 ## License
 
 [beck-view-movie](https://github.com/JuPfu/beck-view-movie) is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
