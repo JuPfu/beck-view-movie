@@ -178,6 +178,14 @@ class GenerateVideo:
         quality = getattr(self, "quality", "better").lower()
 
         X264_PRESETS = {
+            "preview": {
+                "crf": "26",
+                "preset": "ultrafast",
+                "x264_params": (
+                    "aq-mode=1:"
+                    "psy-rd=1.0"
+                ),
+            },
             "good": {
                 "crf": "20",
                 "preset": "medium",

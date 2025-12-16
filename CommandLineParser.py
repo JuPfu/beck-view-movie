@@ -49,9 +49,9 @@ class CommandLineParser:
             dest="quality",
             type=str,
             nargs='?',
-            choices=["good", "better", "best"],
+            choices=["preview", "good", "better", "best"],
             default="best",
-            help='Quality of generated video file - allowed values "good", "better", "best" - default is "best"'
+            help='Quality of generated video file - allowed values "preview", "good", "better", "best" - default is "best"'
         )
         self.parser.add_argument(
             '-fps', '--frames-per-second',
