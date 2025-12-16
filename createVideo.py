@@ -36,6 +36,7 @@ class GenerateVideo:
         self.name: str = os.path.splitext(args.name)[0]
         self.output_format: str = args.output_format
         self.fps: float = args.fps
+        self.quality: str = args.quality
         self.batch_size: int = min(max(1, args.batch_size), 498)
         self.bracketing: bool = args.bracketing
         self.tone_mapper_preset = getattr(args, "tone_mapper_preset", "default").lower()
@@ -61,7 +62,6 @@ class GenerateVideo:
 
         self.num_workers: int = args.num_workers
         self.width_height = args.width_height
-        self.codec: str = args.codec
 
         self.flip: int = 2  # no flip
 
@@ -172,55 +172,82 @@ class GenerateVideo:
         else:
             raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
 
-
     def _initialize_video_writer(self) -> None:
-        # master = str(self.opath / f"{self.name}_master.mov")
-        delivery = str(self.opath / f"{self.name}_delivery.mp4")
-        # output = str(self.opath / self.name) + "." + self.output_format
+        output = str(self.opath / f"{self.name}.{self.output_format}")
 
-        self.ffmpeg = subprocess.Popen(
-            [
-                "ffmpeg",
-                "-hide_banner",
-                "-loglevel", "error",
-                "-stats",
-                "-y",
+        quality = getattr(self, "quality", "better").lower()
 
-                # -------- RAW INPUT --------
-                "-f", "rawvideo",
-                "-pix_fmt", "bgr24",
-                "-video_size", f"{self.width}x{self.height}",
-                "-framerate", str(self.fps),
+        X264_PRESETS = {
+            "good": {
+                "crf": "20",
+                "preset": "medium",
+                "x264_params": None,
+            },
+            "better": {
+                "crf": "18",
+                "preset": "slow",
+                "x264_params": (
+                    "aq-mode=0:"
+                    "psy-rd=0.5:"
+                    "deblock=0,0"
+                ),
+            },
+            "best": {
+                "crf": "10",
+                "preset": "veryslow",
+                "x264_params": (
+                    "aq-mode=0:"
+                    "psy-rd=0:"
+                    "bframes=0:"
+                    "deblock=0,0"
+                ),
+            },
+        }
 
-                # Full-range RGB input
-                "-color_range", "pc",
-                "-colorspace", "bt709",
-                "-color_primaries", "bt709",
-                "-color_trc", "bt709",
+        cfg = X264_PRESETS.get(quality, X264_PRESETS["better"])
 
-                "-i", "-",
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "error",
+            "-stats",
+            "-y",
 
-                # ================= DELIVERY =================
-                "-map", "0:v:0",
+            # ---- RAW INPUT ----
+            "-f", "rawvideo",
+            "-pix_fmt", "bgr24",
+            "-video_size", f"{self.width}x{self.height}",
+            "-framerate", str(self.fps),
 
-                "-c:v", "libx264",
-                "-pix_fmt", "yuv420p",  # compatibility
-                "-profile:v", "high",
-                "-level", "4.2",
-                "-crf", "18",
-                "-preset", "slow",
+            "-color_range", "pc",
+            "-colorspace", "bt709",
+            "-color_primaries", "bt709",
+            "-color_trc", "bt709",
 
-                "-colorspace", "bt709",
-                "-color_primaries", "bt709",
-                "-color_trc", "bt709",
+            "-i", "-",
 
-                "-movflags", "+faststart",
+            # ---- DELIVERY ----
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            "-profile:v", "high",
+            "-level", "4.2",
 
-                delivery,
-            ],
-            stdin=subprocess.PIPE
-        )
+            "-crf", cfg["crf"],
+            "-preset", cfg["preset"],
 
+            "-colorspace", "bt709",
+            "-color_primaries", "bt709",
+            "-color_trc", "bt709",
+
+            "-movflags", "+faststart",
+        ]
+
+        if cfg["x264_params"]:
+            cmd += ["-x264-params", cfg["x264_params"]]
+
+        cmd.append(output)
+
+        self.ffmpeg = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
     def _preload_image_groups(self, grouped_paths: List[List[str]]) -> List[List[ndarray]]:
         def load_group(paths: List[str]) -> List[ndarray]:

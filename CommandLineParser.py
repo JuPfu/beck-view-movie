@@ -40,9 +40,18 @@ class CommandLineParser:
             dest="output_format",
             type=str,
             nargs='?',
-            choices=["avi", "mkv", "mov", "mp4", "m4v", "wmv"],
+            choices=["mov", "mp4"],
             default="mp4",
-            help='Output format of generated video file - allowed values "avi", "mp4", "mp4v", "m4v", "wmv" - default is "mp4"'
+            help='Output format of generated video file - allowed values "mp4", "mov" - default is "mov"'
+        )
+        self.parser.add_argument(
+            '-q', '--quality',
+            dest="quality",
+            type=str,
+            nargs='?',
+            choices=["good", "better", "best"],
+            default="best",
+            help='Quality of generated video file - allowed values "good", "better", "best" - default is "best"'
         )
         self.parser.add_argument(
             '-fps', '--frames-per-second',
@@ -92,15 +101,6 @@ class CommandLineParser:
             nargs='?',
             default="automatic",
             help='Width and height of image frames - default is "automatic" detection of width and height'
-        )
-        self.parser.add_argument(
-            '-c', '--codec',
-            dest="codec",
-            type=str,
-            choices=["avc1", "h263", "h264", "h265", "mjpg", "mpv4", "xvid", "x264"],
-            nargs='?',
-            default="avc1",  # which is a H.264 encoder
-            help='Supported codecs. See https://gist.github.com/takuma7/44f9ecb028ff00e2132e for more information.'
         )
         # Add arguments for exposure bracketing
         self.parser.add_argument(
