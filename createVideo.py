@@ -6,7 +6,6 @@ import sys
 import threading
 from argparse import Namespace
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 from random import randint
 from typing import List
 
@@ -175,14 +174,8 @@ class GenerateVideo:
             raise ValueError(f"Unknown tone mapper: {self.tone_mapper}")
 
     def _initialize_video_writer(self) -> None:
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
-        output = str(
-            self.opath / (
-                f"{self.name}_{self.quality}_{self.fps}_{timestamp}.{self.output_format}"
-            )
-        )
-
+        output = str(self.opath / f"{self.name}.{self.output_format}")
         quality = getattr(self, "quality", "better").lower()
 
         X264_PRESETS = {
