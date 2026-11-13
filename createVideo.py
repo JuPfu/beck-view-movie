@@ -139,11 +139,20 @@ class GenerateVideo:
             self.height: int = int(self.wh[1]) if int(self.wh[1]) >= 100 else 1080
         else:
             if len(self.image_list) > 0:
-                index: int = randint(0, len(self.image_list) - 1)
-                test_image = cv2.imread(self.image_list[index])
-                (self.height, self.width, _) = test_image.shape
+                index = randint(0, len(self.image_list) - 1)
+                test_image = cv2.imread(self.image_list[index], cv2.IMREAD_COLOR)
+
+                if test_image is None:
+                    self.logger.error(
+                        f"OpenCV could not read image: {self.image_list[index]}"
+                    )
+                    raise RuntimeError(
+                        f"Failed to load image: {self.image_list[index]}"
+                    )
+
+                self.height, self.width = test_image.shape[:2]
             else:
-                self.logger.error(f"No images found in {str(self.path)}")
+                raise RuntimeError(f"No images found in {self.path}")
 
         self.logger.info(
             f"Creating video from {len(self.image_list)} 'frames*.png' files with resolution {self.width} x {self.height} in {str(self.opath / self.name)}.{self.output_format}.")
